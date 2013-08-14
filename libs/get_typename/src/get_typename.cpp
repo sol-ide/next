@@ -4,7 +4,7 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "get_typename.hpp"
+#include <next/get_typename/get_typename.hpp>
 #include <algorithm>
 #include <iterator>
 

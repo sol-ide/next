@@ -4,9 +4,10 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "dispatcher.hpp"
-#include "message_handling_thread.hpp"
-#include "abstract_event_data.hpp"
+#include <next/event/dispatcher.hpp>
+#include <next/event/message_handling_thread.hpp>
+#include <next/event/abstract_event_data.hpp>
+
 namespace next
 {
 

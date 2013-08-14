@@ -6,10 +6,13 @@
 
 #pragma once
 
-#include "abstract_event_data.hpp"
+#include <next/event/config.hpp>
+#include <next/event/abstract_event_data.hpp>
 #include <boost/optional.hpp>
 #include <mutex>
 
+#pragma warning(push)
+#pragma warning(disable:4251)
 
 namespace next
 {
@@ -44,7 +47,7 @@ namespace next
         };
     }
 
-    class thread_group
+    class NEXT_EVENT_EXPORT thread_group
     {
     public:
 
@@ -77,3 +80,5 @@ namespace next
         std::mutex           event_data_mutex_;
     };
 }
+
+#pragma warning(push)

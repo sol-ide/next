@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include "abstract_event_data.hpp"
-#include "get_typename.hpp"
+#include <next/event/abstract_event_data.hpp>
+#include <next/get_typename/get_typename.hpp>
 
 namespace next
 {

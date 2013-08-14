@@ -8,7 +8,8 @@
 
 #define BOOST_RESULT_OF_USE_DECLTYPE
 
-#include "event.hpp"
+#include <next/event/config.hpp>
+#include <next/event/event.hpp>
 
 #include <boost/fusion/functional/invocation/invoke.hpp>
 
@@ -18,6 +19,8 @@
 #include <algorithm>
 
 
+#pragma warning(push)
+#pragma warning(disable:4251)
 
 namespace next
 {
@@ -26,12 +29,14 @@ namespace next
 
 	namespace details
 	{
-		class abstract_slot
+        class NEXT_EVENT_EXPORT abstract_slot
 		{
 		public:
 			virtual ~abstract_slot()
 			{
 			}
+
+
 
 			virtual void call( void* untyped_parameters ) = 0;
 		};
@@ -58,7 +63,7 @@ namespace next
 		};
 	}
 
-	class event_handler_impl
+    class NEXT_EVENT_EXPORT event_handler_impl
 	{
 	private:
 		typedef std::unordered_multimap< std::string, std::unique_ptr< details::abstract_slot > > slots_type;
@@ -68,9 +73,7 @@ namespace next
 
         event_handler_impl( const event_handler_impl& other );
 
-        ~event_handler_impl()
-        {
-        }
+        ~event_handler_impl();
 
 		template< typename Event, typename F >
         void listen( F && f );
@@ -93,23 +96,13 @@ namespace next
         );
     }
 
-    class event_handler
+    class NEXT_EVENT_EXPORT event_handler
     {
     public:
-        event_handler( next::dispatcher& d )
-            : handler_( std::make_shared < event_handler_impl >( d ) )
-        {
+        event_handler( next::dispatcher& d );
+        event_handler( const event_handler& other );
 
-        }
-
-        event_handler( const event_handler& other )
-            : handler_( other.handler_ )
-        {
-        }
-
-        ~event_handler()
-        {
-        }
+        ~event_handler();
 
         template< typename Event, typename F >
         void listen( F && f )
@@ -117,17 +110,13 @@ namespace next
             handler_->listen< Event >( std::forward< F >( f ) );
         }
 
-        void call( const std::string& event_name, void* untyped_parameters )
-        {
-            handler_->call( event_name, untyped_parameters );
-        }
+        void call( const std::string& event_name, void* untyped_parameters );
 
-        std::weak_ptr< thread_group > get_thread_group()
-        {
-            return handler_->get_thread_group();
-        }
+        std::weak_ptr< thread_group > get_thread_group();
 
     private:
         std::shared_ptr< event_handler_impl > handler_;
     };
 }
+
+#pragma warning(pop)

@@ -4,8 +4,8 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "event_handler.hpp"
-#include "dispatcher.hpp"
+#include <next/event/event_handler.hpp>
+#include <next/event/dispatcher.hpp>
 
 namespace next
 {
@@ -16,6 +16,10 @@ namespace next
 
     event_handler_impl::event_handler_impl( const event_handler_impl& other )
         : group_( other.group_ )
+    {
+    }
+
+    event_handler_impl::~event_handler_impl()
     {
     }
 
@@ -35,5 +39,32 @@ namespace next
     std::weak_ptr< thread_group > event_handler_impl::get_thread_group()
     {
         return group_;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////
+
+    event_handler::event_handler( next::dispatcher& d )
+        : handler_( std::make_shared < event_handler_impl >( d ) )
+    {
+
+    }
+
+    event_handler::event_handler( const event_handler& other )
+        : handler_( other.handler_ )
+    {
+    }
+
+    event_handler::~event_handler()
+    {
+    }
+
+    void event_handler::call( const std::string& event_name, void* untyped_parameters )
+    {
+        handler_->call( event_name, untyped_parameters );
+    }
+
+    std::weak_ptr< thread_group > event_handler::get_thread_group()
+    {
+        return handler_->get_thread_group();
     }
 }

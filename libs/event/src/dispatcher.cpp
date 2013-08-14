@@ -4,7 +4,7 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "dispatcher.hpp"
+#include <next/event/dispatcher.hpp>
 #include <boost/phoenix/core/argument.hpp>
 #include <boost/phoenix/object/delete.hpp>
 

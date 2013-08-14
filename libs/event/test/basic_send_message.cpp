@@ -4,7 +4,7 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include <next/dispatcher.hpp>
+#include <next/event/dispatcher.hpp>
 #include <next/event/event_handler.hpp>
 #include <next/event/event.hpp>
 
