@@ -14,6 +14,7 @@ namespace next
     dispatcher::~dispatcher()
     {
         // TODO: wait until each event has been received
+        std::unique_lock< std::mutex > lock( threads_lock_ );
 
         using boost::phoenix::placeholders::arg1;
         std::for_each( std::begin( waiting_threads_ ), std::end( waiting_threads_ ), boost::phoenix::delete_( arg1 ) );
@@ -35,10 +36,7 @@ namespace next
 
     void dispatcher::send_event_impl( event_handler& h, std::unique_ptr< next::abstract_event_data > event_data )
     {
-        // event_data->dispatch_message_to( h );
-
         auto& group = h.get_thread_group();
-
         {
             std::unique_lock< std::mutex > lock( thread_group_mutex_ );
             {
@@ -93,7 +91,11 @@ namespace next
         }
         else
         {
+#ifdef _WIN32
+# ifndef _WIN64
             _asm int 3;
+# endif
+#endif
         }
     }
 

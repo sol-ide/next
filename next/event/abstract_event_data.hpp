@@ -27,6 +27,8 @@ namespace next
 		}
 
 		virtual void dispatch_message_to( event_handler& h ) = 0;
-	};
+
+    virtual void get_future_result( void* value ) = 0;
+  };
 
 }

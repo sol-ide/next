@@ -8,28 +8,43 @@
 
 #include <next/event/abstract_event_data.hpp>
 #include <next/get_typename/get_typename.hpp>
+#include <future>
 
 namespace next
 {
-	template< typename Event >
-	class event_data : public abstract_event_data
-	{
-	public:
-		typedef typename Event::parameter_types parameters_type;
 
-		template< typename... Args >
-		event_data( Args&&... args )
-			: parameters_( std::forward< Args >( args )... )
-		{
-		}
+  template< typename Event >
+  class event_data : public abstract_event_data
+  {
+  public:
+    typedef typename Event::parameter_types parameters_type;
+    typedef typename Event::return_type     return_type;
+    typedef typename Event::future_type     future_type;
+    typedef typename Event::promise_type    promise_type;
 
-		virtual void dispatch_message_to( event_handler& h )
-		{
-			h.call( next::get_typename< Event >(), &parameters_ );
-		}
+    template< typename... Args >
+    event_data( Args && ... args )
+      : parameters_( std::forward< Args >( args )... )
+      , result_( promise_.get_future() )
+    {
+    }
 
-	private:
+    virtual void dispatch_message_to( event_handler& h )
+    {
+      h.call( next::get_typename< Event >( ), &parameters_, &promise_ );
+    }
 
-		parameters_type parameters_;
-	};
+    virtual void get_future_result( void* value )
+    {
+      auto typed_value = static_cast< future_type* >( value );
+      *typed_value = std::move( result_ );
+      
+    }
+
+  private:
+
+    parameters_type parameters_;
+    promise_type    promise_;
+    future_type     result_;
+  };
 }

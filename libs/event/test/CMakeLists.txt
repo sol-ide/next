@@ -5,14 +5,10 @@
 
 include_directories(${NEXT_SOURCE_DIR})
 
-add_executable(
-  testEvent
-  basic_send_message.cpp
-)
 
-target_link_libraries(
-  testEvent
-  event
-  ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
+# next_test_run( basic_send_message DEPENDS boost_unit_test_framework next_event )
+next_test_run(
+  basic_send_message
+  LINK_LIBS ${Boost_TEST_EXEC_MONITOR_LIBRARY}
+  DEPENDS next_event
 )
-add_test(tester testEvent)

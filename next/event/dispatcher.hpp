@@ -21,6 +21,7 @@
 #include <mutex>
 #include <utility>
 #include <unordered_set>
+#include <future>
 
 #pragma warning(push)
 #pragma warning(disable:4251)
@@ -77,9 +78,12 @@ namespace next
     {
     }
 
-    void to( event_handler& h )
+    typename Event::future_type to( event_handler& h )
     {
+      typename Event::future_type future;
+      event_data_->get_future_result( &future );
       d_.send_event_impl( h, std::move( event_data_ ) );
+      return std::move( future );
     }
 
   private:

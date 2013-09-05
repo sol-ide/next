@@ -6,25 +6,26 @@
 
 #pragma once
 
+#include <next/get_typename/config.hpp>
 #include <boost/algorithm/string/erase.hpp>
 #include <string>
 
 
 namespace next
 {
-	namespace details
-	{
-		std::string get_typename_from_function_name( const char* function_name );
-	}
+  namespace details
+  {
+    NEXT_GET_TYPENAME_EXPORT std::string get_typename_from_function_name( const char* function_name );
+  }
 
 #ifdef _MSC_VER
-	template< typename T >
-	const std::string& get_typename()
-	{
-		static const char* lpsz_function_name = __FUNCSIG__;
-		static const std::string function_name = details::get_typename_from_function_name( lpsz_function_name );
-		return function_name;
-	}
+  template< typename T >
+  const std::string& get_typename()
+  {
+    static const char* lpsz_function_name = __FUNCSIG__;
+    static const std::string function_name = details::get_typename_from_function_name( lpsz_function_name );
+    return function_name;
+  }
 #else
 # ifdef __GNUC__
 #   ifdef __clang__
