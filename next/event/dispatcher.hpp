@@ -17,6 +17,7 @@
 #include <boost/fusion/include/at_key.hpp>
 #include <boost/fusion/include/has_key.hpp>
 #include <boost/phoenix/object/construct.hpp>
+#include <boost/thread/shared_mutex.hpp>
 #include <memory>
 #include <mutex>
 #include <utility>
@@ -103,6 +104,7 @@ namespace next
 
     template< typename... Args >
     dispatcher( Args&&... args )
+      : is_being_deleted_( false )
     {
       typedef boost::fusion::set< Args... > Arguments;
 
@@ -124,7 +126,7 @@ namespace next
       {
         message_handling_thread* thread_ptr = nullptr;
         {
-          std::unique_lock< std::mutex > lock( threads_lock_ );
+          std::unique_lock< std::mutex > lock( threads_mutex_ );
           auto result = running_threads_.emplace( new message_handling_thread( *this ) );
           thread_ptr = *result.first;
         }
@@ -160,6 +162,7 @@ namespace next
     void move_waiting_to_dispatching_group_thread( thread_group* group );
     void remove_group_thread_from_currently_dispatching( thread_group* group );
     std::shared_ptr< thread_group > check_for_waiting_group();
+    void wait_until_there_is_no_waiting_group();
 
   private:
     // typedef next::details::set_unique_ptr< message_handling_thread > message_handling_thread_ptr;
@@ -168,7 +171,9 @@ namespace next
 
     std::unordered_set< message_handling_thread_ptr > waiting_threads_;
     std::unordered_set< message_handling_thread_ptr > running_threads_;
-    mutable std::mutex                                threads_lock_;
+
+    // sometimes we need to read 
+    mutable std::mutex                                threads_mutex_;
 
     // typedef std::weak_ptr< thread_group > thread_group_ptr;
     // std::unordered_set < thread_group_ptr, details::hash_weak< thread_group >, details::equal_to_weak< thread_group > >  thread_groups_;
@@ -178,6 +183,11 @@ namespace next
     std::unordered_set< thread_group* >     waiting_for_dispatch_thread_groups_;
     std::unordered_set< thread_group* >     currently_dispatching_thread_groups_;
     mutable std::mutex                      thread_group_mutex_;
+    std::condition_variable                 no_more_waiting_thread_group_condition_;
+
+
+    bool                                    is_being_deleted_;
+    mutable std::mutex                      begin_deleted_mutex_;
   };
 }
 

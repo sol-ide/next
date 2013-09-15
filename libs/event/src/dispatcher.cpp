@@ -11,129 +11,155 @@
 
 namespace next
 {
-    dispatcher::~dispatcher()
+  dispatcher::~dispatcher()
+  {
+    // TODO: wait until each event has been received
     {
-        // TODO: wait until each event has been received
-        std::unique_lock< std::mutex > lock( threads_lock_ );
-
-        using boost::phoenix::placeholders::arg1;
-        std::for_each( std::begin( waiting_threads_ ), std::end( waiting_threads_ ), boost::phoenix::delete_( arg1 ) );
-        // std::for_each( std::begin( waiting_threads_ ), std::end( waiting_threads_ ), [ ]( message_handling_thread_ptr ptr ){ /* delete ptr; */ } );
-        std::for_each( std::begin( running_threads_ ), std::end( running_threads_ ), boost::phoenix::delete_( arg1 ) );
-        // std::for_each( std::begin( running_threads_ ), std::end( running_threads_ ), [ ]( message_handling_thread_ptr ptr ){ delete ptr; } );
+      std::unique_lock< std::mutex > read_lock( begin_deleted_mutex_ );
+      is_being_deleted_ = true;
     }
 
-    std::weak_ptr< thread_group > dispatcher::create_thread_group()
-    {
-        using namespace std::placeholders;
+    wait_until_there_is_no_waiting_group();
 
-        // auto thread_group_ptr = std::shared_ptr< thread_group >( new thread_group(), std::bind( &dispatcher::remove_thread_group_and_delete, this, _1 ) );
-        auto thread_group_ptr = std::make_shared< thread_group >( );
-        std::unique_lock< std::mutex > lock( thread_group_mutex_ );
-        thread_groups_.insert( thread_group_ptr );
-        return thread_group_ptr;
-    }
+    using boost::phoenix::placeholders::arg1;
+    std::for_each( std::begin( waiting_threads_ ), std::end( waiting_threads_ ), boost::phoenix::delete_( arg1 ) );
+    // std::for_each( std::begin( waiting_threads_ ), std::end( waiting_threads_ ), [ ]( message_handling_thread_ptr ptr ){ /* delete ptr; */ } );
+    std::for_each( std::begin( running_threads_ ), std::end( running_threads_ ), boost::phoenix::delete_( arg1 ) );
+    // std::for_each( std::begin( running_threads_ ), std::end( running_threads_ ), [ ]( message_handling_thread_ptr ptr ){ delete ptr; } );
+  }
 
-    void dispatcher::send_event_impl( event_handler& h, std::unique_ptr< next::abstract_event_data > event_data )
+  std::weak_ptr< thread_group > dispatcher::create_thread_group()
+  {
+    using namespace std::placeholders;
+
+    // auto thread_group_ptr = std::shared_ptr< thread_group >( new thread_group(), std::bind( &dispatcher::remove_thread_group_and_delete, this, _1 ) );
+    auto thread_group_ptr = std::make_shared< thread_group >( );
+    std::unique_lock< std::mutex > lock( thread_group_mutex_ );
+    thread_groups_.insert( thread_group_ptr );
+    return thread_group_ptr;
+  }
+
+  void dispatcher::send_event_impl( event_handler& h, std::unique_ptr< next::abstract_event_data > event_data )
+  {
+    auto& group = h.get_thread_group();
     {
-        auto& group = h.get_thread_group();
+      std::unique_lock< std::mutex > lock( thread_group_mutex_ );
+      {
+        auto group_lock = group.lock();
+        group_lock->store_event_data( h, std::move( event_data ) );
+
+
+        auto iter = currently_dispatching_thread_groups_.find( group_lock.get() );
+        if( iter != currently_dispatching_thread_groups_.end() )
         {
-            std::unique_lock< std::mutex > lock( thread_group_mutex_ );
-            {
-                auto group_lock = group.lock();
-                group_lock->store_event_data( h, std::move( event_data ) );
-
-
-                auto iter = currently_dispatching_thread_groups_.find( group_lock.get() );
-                if( iter != currently_dispatching_thread_groups_.end() )
-                {
-                    // an event is already dispatched in this thread group... do nothing
-                }
-                else
-                {
-                    auto insert_result = waiting_for_dispatch_thread_groups_.insert( group_lock.get() );
-
-                    if( insert_result.second == true )
-                    {
-                        // no event is waiting or dispatching in this thread group... wake up a thread if possible.
-                        std::unique_lock< std::mutex > lock( threads_lock_ );
-                        if( waiting_threads_.begin() != waiting_threads_.end() )
-                        {
-
-                            auto iter_waiting_thread = waiting_threads_.begin();
-                            auto iter_running_thread = running_threads_.insert( std::move( *iter_waiting_thread ) );
-                            waiting_threads_.erase( iter_waiting_thread );
-                            auto& message_handling_thread_ptr = *iter_running_thread.first;
-                            message_handling_thread_ptr->wake_up_thread( group_lock );
-                        }
-                        else
-                        {
-                            waiting_for_thread_thread_groups_.insert( group_lock );
-                        }
-                    }
-                    else
-                    {
-                        // an event is already waiting for dispatch... do nothing
-                    }
-                }
-            }
-        }
-    }
-
-    void dispatcher::register_in_waiting_task_poll( message_handling_thread* handler )
-    {
-        std::unique_lock< std::mutex > lock( threads_lock_ );
-        auto iter = running_threads_.find( handler );
-        if( iter != running_threads_.end() )
-        {
-            waiting_threads_.insert( std::move( *iter ) );
-            running_threads_.erase( iter );
+          // an event is already dispatched in this thread group... do nothing
         }
         else
         {
+          auto insert_result = waiting_for_dispatch_thread_groups_.insert( group_lock.get() );
+
+          if( insert_result.second == true )
+          {
+            // no event is waiting or dispatching in this thread group... wake up a thread if possible.
+            std::unique_lock< std::mutex > lock( threads_mutex_ );
+            if( waiting_threads_.begin() != waiting_threads_.end() )
+            {
+              std::unique_lock< std::mutex > being_deleted_lock( begin_deleted_mutex_ );
+              if( is_being_deleted_ == false )
+              {
+                being_deleted_lock.unlock();
+
+                auto iter_waiting_thread = waiting_threads_.begin();
+                auto iter_running_thread = running_threads_.insert( std::move( *iter_waiting_thread ) );
+                waiting_threads_.erase( iter_waiting_thread );
+                auto& message_handling_thread_ptr = *iter_running_thread.first;
+                message_handling_thread_ptr->wake_up_thread( group_lock );
+              }
+            }
+            else
+            {
+              waiting_for_thread_thread_groups_.insert( group_lock );
+            }
+          }
+          else
+          {
+              // an event is already waiting for dispatch... do nothing
+          }
+        }
+      }
+    }
+  }
+
+  void dispatcher::register_in_waiting_task_poll( message_handling_thread* handler )
+  {
+    std::unique_lock< std::mutex > read_lock( threads_mutex_ );
+    auto iter = running_threads_.find( handler );
+    if( iter != running_threads_.end() )
+    {
+      waiting_threads_.insert( std::move( *iter ) );
+      running_threads_.erase( iter );
+    }
+    else
+    {
 #ifdef _WIN32
-# ifndef _WIN64
-            _asm int 3;
-# endif
+      __debugbreak();
 #endif
-        }
     }
+  }
 
-    void dispatcher::remove_from_waiting_task_poll( message_handling_thread* handler )
+  void dispatcher::remove_from_waiting_task_poll( message_handling_thread* handler )
+  {
+    std::unique_lock< std::mutex > lock( threads_mutex_ );
+    auto iter = waiting_threads_.find( handler );
+    if( iter != waiting_threads_.end() )
     {
-        std::unique_lock< std::mutex > lock( threads_lock_ );
-        auto iter = waiting_threads_.find( handler );
-        if( iter != waiting_threads_.end() )
-        {
-            running_threads_.insert( std::move( *iter ) );
-            waiting_threads_.erase( iter );
-        }
+      running_threads_.insert( std::move( *iter ) );
+      waiting_threads_.erase( iter );
     }
+  }
 
-    void dispatcher::move_waiting_to_dispatching_group_thread( thread_group* group )
-    {
-        std::unique_lock< std::mutex > lock( thread_group_mutex_ );
-        waiting_for_dispatch_thread_groups_.erase( group );
-        currently_dispatching_thread_groups_.insert( group );
-    }
+  void dispatcher::move_waiting_to_dispatching_group_thread( thread_group* group )
+  {
+    std::unique_lock< std::mutex > lock( thread_group_mutex_ );
+    waiting_for_dispatch_thread_groups_.erase( group );
+    currently_dispatching_thread_groups_.insert( group );
+  }
 
-    void dispatcher::remove_group_thread_from_currently_dispatching( thread_group* group )
+  void dispatcher::remove_group_thread_from_currently_dispatching( thread_group* group )
+  {
+    std::unique_lock< std::mutex > lock( thread_group_mutex_ );
+    if( group->has_pending_messages() == false )
     {
-        std::unique_lock< std::mutex > lock( thread_group_mutex_ );
-        currently_dispatching_thread_groups_.erase( group );
-    }
+      currently_dispatching_thread_groups_.erase( group );
 
-    std::shared_ptr< thread_group > dispatcher::check_for_waiting_group()
-    {
-        std::unique_lock< std::mutex > lock( thread_group_mutex_ );
-        auto found_group = std::shared_ptr< thread_group >( );
-        if( waiting_for_thread_thread_groups_.begin() != waiting_for_thread_thread_groups_.end() )
-        {
-            auto iter = waiting_for_thread_thread_groups_.begin();
-            found_group = *iter;
-            waiting_for_thread_thread_groups_.erase( iter );
-            waiting_for_dispatch_thread_groups_.insert( found_group.get() );
-        }
-        return found_group;
+      // notify when there is no more thred group in the pipe...
+      if( waiting_for_thread_thread_groups_.empty() && waiting_for_dispatch_thread_groups_.empty() && currently_dispatching_thread_groups_.empty() )
+      {
+        no_more_waiting_thread_group_condition_.notify_all();
+      }
     }
+  }
+
+  std::shared_ptr< thread_group > dispatcher::check_for_waiting_group()
+  {
+    std::unique_lock< std::mutex > lock( thread_group_mutex_ );
+    auto found_group = std::shared_ptr< thread_group >( );
+    if( waiting_for_thread_thread_groups_.begin() != waiting_for_thread_thread_groups_.end() )
+    {
+      auto iter = waiting_for_thread_thread_groups_.begin();
+      found_group = *iter;
+      waiting_for_thread_thread_groups_.erase( iter );
+      waiting_for_dispatch_thread_groups_.insert( found_group.get() );
+    }
+    return found_group;
+  }
+
+  void dispatcher::wait_until_there_is_no_waiting_group()
+  {
+    std::unique_lock< std::mutex > lock( thread_group_mutex_ );
+    while( waiting_for_thread_thread_groups_.empty() == false && waiting_for_dispatch_thread_groups_.empty() == false && currently_dispatching_thread_groups_.empty() == false )
+    {
+      no_more_waiting_thread_group_condition_.wait( lock );
+    }
+  }
 }

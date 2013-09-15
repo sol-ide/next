@@ -1,5 +1,5 @@
 
-//          Copyright Sylvain Oliver 2013.
+//          Copyright Syvain Oliver 2013.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -8,11 +8,15 @@
 
 #include <boost/test/unit_test.hpp> // for main, BOOST_CHECK, etc.
 
+
 #include <next/event/dispatcher.hpp>
 #include <next/event/event_handler.hpp>
 #include <next/event/event.hpp>
+#include <thread>
 
 #include <iostream>
+
+#include <intrin.h>
 
 namespace mine
 {
@@ -27,17 +31,33 @@ namespace mine
     };
 }
 
-/*
-int main( int argc, char* argv[] )
+
+// Unit test for user-defined data saving
+void event_basic_send_event()
 {
+  std::mutex m;
+  std::ostringstream oss;
+  {
     next::dispatcher d{ next::thread_pool_size_t{ 4 } };
 
     next::event_handler h{ d };
+
     h.listen< mine::an_event >(
-        [ ]( int x )
+      [ &oss, &m ]( int x )
+      {
+        
+        if( m.try_lock() )
         {
-            std::cout << "event received : " << x << std::endl;
+          oss << "event received : " << x << "\n";
+          // std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
+          m.unlock();
         }
+        else
+        {
+          // __debugbreak();
+          BOOST_FAIL( "two event are trtreated at the same times" );
+        }
+      }
     );
 
     d.send_event< mine::an_event >( 10 ).to( h );
@@ -49,33 +69,19 @@ int main( int argc, char* argv[] )
     d.send_event< mine::an_event >( 70 ).to( h );
     d.send_event< mine::an_event >( 80 ).to( h );
     d.send_event< mine::an_event >( 90 ).to( h );
-
-    return 0;
-}
-*/
-
-// Unit test for user-defined data saving
-void event_basic_send_event()
-{
-  next::dispatcher d{ next::thread_pool_size_t{ 4 } };
-
-  next::event_handler h{ d };
-  h.listen< mine::an_event >(
-    [ ]( int x )
-  {
-    std::cout << "event received : " << x << std::endl;
   }
-  );
-
-  d.send_event< mine::an_event >( 10 ).to( h );
-  d.send_event< mine::an_event >( 20 ).to( h );
-  d.send_event< mine::an_event >( 30 ).to( h );
-  d.send_event< mine::an_event >( 40 ).to( h );
-  d.send_event< mine::an_event >( 50 ).to( h );
-  d.send_event< mine::an_event >( 60 ).to( h );
-  d.send_event< mine::an_event >( 70 ).to( h );
-  d.send_event< mine::an_event >( 80 ).to( h );
-  d.send_event< mine::an_event >( 90 ).to( h );
+  BOOST_REQUIRE_EQUAL(
+    oss.str(),
+    "event received : 10\n"
+    "event received : 20\n"
+    "event received : 30\n"
+    "event received : 40\n"
+    "event received : 50\n"
+    "event received : 60\n"
+    "event received : 70\n"
+    "event received : 80\n"
+    "event received : 90\n"
+    );
 }
 
 void event_basic_send_message_with_result()
@@ -83,67 +89,103 @@ void event_basic_send_message_with_result()
   next::dispatcher d{ next::thread_pool_size_t{ 4 } };
 
   next::event_handler h{ d };
-  h.listen< mine::an_event >(
-    [ ]( int x )
+  auto operation = [ ]( int x ) -> int
   {
-    std::cout << "event received : " << x << std::endl;
-  }
-  );
+    return x + 1;
+  };
 
   h.listen< mine::an_increment_event >(
-    [ ]( int x ) -> int
-  {
-    std::cout << "event received : " << x << std::endl;
-    return x + 1;
-  }
+    operation
   );
 
-  auto result1 = d.send_event< mine::an_increment_event >( 10 ).to( h );
-  auto result2 = d.send_event< mine::an_increment_event >( 20 ).to( h );
-  auto result3 = d.send_event< mine::an_increment_event >( 30 ).to( h );
-  auto result4 = d.send_event< mine::an_increment_event >( 40 ).to( h );
-  auto result5 = d.send_event< mine::an_increment_event >( 50 ).to( h );
-  std::cout << *result1.get() << std::endl;
-  std::cout << *result2.get() << std::endl;
-  std::cout << *result3.get() << std::endl;
-  std::cout << *result4.get() << std::endl;
-  std::cout << *result5.get() << std::endl;
+  std::deque< int > number_list{ 10, 20, 30, 40, 50 };
+  std::deque< int > expected_result_list;
+
+  std::transform(
+    std::begin( number_list ),
+    std::end( number_list ),
+    std::back_inserter( expected_result_list ),
+    operation
+  );
+
+  std::deque< std::future< boost::optional< int > > > future_result_list;
+  std::deque< int >                                   result_list;
+  
+
+  for( int value : number_list )
+  {
+    future_result_list.push_back( d.send_event< mine::an_increment_event >( value ).to( h ) );
+  }
+
+  std::for_each(
+    std::begin( future_result_list ),
+    std::end( future_result_list ),
+    [ &result_list ]( std::future < boost::optional< int > >& future_value )
+    {
+      const boost::optional< int >& value = future_value.get();
+      if( value )
+      {
+        result_list.push_back( *value );
+      }
+    }
+  );
+
+  std::sort(
+    std::begin( result_list ),
+    std::end( result_list )
+  );
+
+  BOOST_REQUIRE( result_list.size() == expected_result_list.size() );
+  BOOST_REQUIRE( std::equal( std::begin( result_list ), std::end( result_list ), std::begin( expected_result_list ) ) );
 }
 
 void multiple_handler_registered_on_event()
 {
-  next::dispatcher d{ next::thread_pool_size_t{ 4 } };
-
-  next::event_handler h{ d };
-  h.listen< mine::an_event >(
-    [ ]( int x )
-  {
-    std::cout << "event received [1] : " << x << std::endl;
-  }
+  int number_of_handler = 3;
+  std::deque< int > send_values{ 10, 20, 30 };
+  std::multimap< int, int > wanted_values;
+  std::multimap< int, int > received_values;
+  
+  std::for_each(
+    std::begin( send_values ),
+    std::end( send_values ),
+    [ &wanted_values, number_of_handler ]( int value )
+    {
+      for( int handler_index = 0; handler_index < number_of_handler; ++handler_index )
+      {
+        wanted_values.emplace( value, handler_index );
+      }
+    }
   );
 
-  h.listen< mine::an_event >(
-    [ ]( int x )
   {
-    std::cout << "event received [2] : " << x << std::endl;
-  }
-  );
+    next::dispatcher d{ next::thread_pool_size_t{ 4 } };
 
-  h.listen< mine::an_event >(
-    [ ]( int x )
-  {
-    std::cout << "event received [3] : " << x << std::endl;
-  }
-  );
+    next::event_handler h{ d };
+    for( int handler_index = 0; handler_index < number_of_handler; ++handler_index )
+    {
+      h.listen< mine::an_event >(
+        [ &received_values, handler_index ]( int value )
+        {
+          received_values.emplace( value, handler_index );
+        }
+      );
+    }
 
-  d.send_event< mine::an_event >( 10 ).to( h );
-  d.send_event< mine::an_event >( 20 ).to( h );
-  d.send_event< mine::an_event >( 30 ).to( h );
+    std::for_each(
+      std::begin( send_values ),
+      std::end( send_values ),
+      [ &d, &h ]( int value )
+      {
+        d.send_event< mine::an_event >( value ).to( h );
+      }
+    );
+  }
+
+  BOOST_REQUIRE( received_values.size() == wanted_values.size() );
+  BOOST_REQUIRE( std::equal( std::begin( received_values ), std::end( received_values ), std::begin( wanted_values ) ) );
 }
 
-void empty_test()
-{
-}
 
 // Unit test program
 boost::unit_test_framework::test_suite *

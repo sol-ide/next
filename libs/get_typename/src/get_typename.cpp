@@ -33,7 +33,7 @@ namespace next
 
 			std::string typename_string( function_name + index_of_begin_name, function_name + index_of_end_name );
 
-			static const char* typename_noise_list[] = { "const ", "volatile ", "struct ", "class " };
+      static const char* typename_noise_list[] = { "struct ", "class " };
 			for( std::size_t index = 0; index < sizeof( typename_noise_list ) / sizeof( *typename_noise_list ); ++index )
 			{
 				const char* typename_noise_item = typename_noise_list[ index ];
