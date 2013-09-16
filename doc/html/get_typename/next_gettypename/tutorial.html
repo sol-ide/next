@@ -1,0 +1,66 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<title>Tutorial</title>
+<link rel="stylesheet" href="../../boostbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<link rel="home" href="../index.html" title="Chapter&#160;1.&#160;Next.GetTypename">
+<link rel="up" href="../index.html" title="Chapter&#160;1.&#160;Next.GetTypename">
+<link rel="prev" href="../index.html" title="Chapter&#160;1.&#160;Next.GetTypename">
+<link rel="next" href="todo.html" title="Todo">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table cellpadding="2" width="100%"><tr><td valign="top"></td></tr></table>
+<hr>
+<div class="spirit-nav">
+<a accesskey="p" href="../index.html"><img src="../../images/prev.png" alt="Prev"></a><a accesskey="u" href="../index.html"><img src="../../images/up.png" alt="Up"></a><a accesskey="h" href="../index.html"><img src="../../images/home.png" alt="Home"></a><a accesskey="n" href="todo.html"><img src="../../images/next.png" alt="Next"></a>
+</div>
+<div class="section">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="next_gettypename.tutorial"></a><a class="link" href="tutorial.html" title="Tutorial">Tutorial</a>
+</h2></div></div></div>
+<p>
+      This tutorial section shows some of the features of Next.GetTypename in the
+      form of annotated, relatively simple, code snippets.
+    </p>
+<p>
+      Before each example, includes are :
+    </p>
+<p>
+      
+</p>
+<pre class="programlisting"><span class="preprocessor">#include</span> <span class="special">&lt;</span><span class="identifier">next</span><span class="special">/</span><span class="identifier">get_typename</span><span class="special">/</span><span class="identifier">get_typename</span><span class="special">.</span><span class="identifier">hpp</span><span class="special">&gt;</span>
+</pre>
+<p>
+    </p>
+<a name="next_gettypename.tutorial.get_typename_from_a_struct_or_a_class_name"></a><h4>
+<a name="id1491675"></a>
+      <a class="link" href="tutorial.html#next_gettypename.tutorial.get_typename_from_a_struct_or_a_class_name">Get
+      typename from a struct or a class name</a>
+    </h4>
+<p>
+      
+</p>
+<pre class="programlisting"><span class="keyword">struct</span> <span class="identifier">an_type</span>
+<span class="special">{</span>
+<span class="special">};</span>
+
+<span class="identifier">BOOST_REQUIRE_EQUAL</span><span class="special">(</span> <span class="identifier">next</span><span class="special">::</span><span class="identifier">get_typename</span><span class="special">&lt;</span> <span class="identifier">an_type</span> <span class="special">&gt;(),</span> <span class="string">"an_type"</span> <span class="special">);</span>
+</pre>
+<p>
+    </p>
+</div>
+<table xmlns:rev="http://www.cs.rpi.edu/~gregod/boost/tools/doc/revision" width="100%"><tr>
+<td align="left"></td>
+<td align="right"><div class="copyright-footer">Copyright &#169; 2013 Sylvain Oliver<p>
+        Distributed under the Boost Software License, Version 1.0. (See accompanying
+        file LICENSE_1_0.txt or copy at <a href="http://www.boost.org/LICENSE_1_0.txt" target="_top">http://www.boost.org/LICENSE_1_0.txt</a>)
+      </p>
+</div></td>
+</tr></table>
+<hr>
+<div class="spirit-nav">
+<a accesskey="p" href="../index.html"><img src="../../images/prev.png" alt="Prev"></a><a accesskey="u" href="../index.html"><img src="../../images/up.png" alt="Up"></a><a accesskey="h" href="../index.html"><img src="../../images/home.png" alt="Home"></a><a accesskey="n" href="todo.html"><img src="../../images/next.png" alt="Next"></a>
+</div>
+</body>
+</html>

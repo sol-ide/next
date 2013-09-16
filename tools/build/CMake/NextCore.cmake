@@ -339,6 +339,8 @@ macro(next_library_project LIBNAME)
     endforeach()
   endif()
 
+  message( "BUILD_DOCUMENTATION = ${BUILD_DOCUMENTATION}")
+  message( "THIS_PROJECT_DOCDIRS = ${THIS_PROJECT_DOCDIRS}")
   if (BUILD_DOCUMENTATION AND THIS_PROJECT_DOCDIRS)
     foreach(SUBDIR ${THIS_PROJECT_DOCDIRS})
       add_subdirectory(${SUBDIR})

@@ -64,8 +64,9 @@ macro(xsl_transform OUTPUT INPUT)
   # TODO: Is this the best way to handle catalogs? The alternative is
   # that we could provide explicit remappings to the xsl_transform
   # macro, and it could generate a temporary XML catalog file.
+  message( "THIS_XSL_CATALOG = ${THIS_XSL_CATALOG}")
   if (THIS_XSL_CATALOG)
-    set(THIS_XSL_CATALOG "XML_CATALOG_FILES=${THIS_XSL_CATALOG}")
+    #set(THIS_XSL_CATALOG "XML_CATALOG_FILES=${THIS_XSL_CATALOG}")
   endif ()
 
   # Translate XSL parameters into a form that xsltproc can use.
@@ -100,9 +101,14 @@ macro(xsl_transform OUTPUT INPUT)
     message(SEND_ERROR 
       "xsl_transform macro invoked without a STYLESHEET argument")
   else()
+    set(ENV{XML_CATALOG_FILES} ${THIS_XSL_CATALOG})
+    STRING(REGEX REPLACE "_" "" NEXT_PROJECT_DOC_DIRECTORY ${NEXT_PROJECT_NAME})
+    message( "NEXT_PROJECT_DOC_DIRECTORY = ${NEXT_PROJECT_DOC_DIRECTORY}" )
+
     # Run the XSLT processor to do the XML transformation.
     add_custom_command(OUTPUT ${THIS_XSL_OUTPUT_FILE}
-      COMMAND ${THIS_XSL_CATALOG} ${XSLTPROC_EXECUTABLE} ${XSLTPROC_FLAGS} 
+      COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/html/next_${NEXT_PROJECT_DOC_DIRECTORY}
+      COMMAND ${XSLTPROC_EXECUTABLE} ${XSLTPROC_FLAGS}
               ${THIS_XSL_EXTRA_FLAGS} -o ${THIS_XSL_OUTPUT} 
               --path ${CMAKE_CURRENT_BINARY_DIR}
               ${THIS_XSL_STYLESHEET} ${INPUT}
@@ -128,7 +134,7 @@ endmacro(xsl_transform)
 
 # Use Doxygen to parse header files and produce BoostBook output.
 #
-#   doxygen_to_nextbook(output header1 header2 ...
+#   doxygen_to_boostbook(output header1 header2 ...
 #     [PARAMETERS param1=value1 param2=value2 ... ])
 #
 # This macro sets up rules to transform a set of C/C++ header files
@@ -145,7 +151,7 @@ endmacro(xsl_transform)
 #
 # This macro is intended to be used internally by
 # next_add_documentation.
-macro(doxygen_to_nextbook OUTPUT)
+macro(doxygen_to_boostbook OUTPUT)
   parse_arguments(THIS_DOXY
     "PARAMETERS"
     ""
@@ -184,7 +190,7 @@ macro(doxygen_to_nextbook OUTPUT)
   # Generate Doxygen XML
   add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/xml/index.xml
     COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYFILE}
-    COMMENT "Generating Doxygen XML output for Boost.${NEXT_PROJECT_NAME}..."
+    COMMENT "Generating Doxygen XML output for Next.${NEXT_PROJECT_NAME}..."
     DEPENDS ${THIS_DOXY_HEADERS})
 
   # Collect Doxygen XML into a single XML file
@@ -195,14 +201,14 @@ macro(doxygen_to_nextbook OUTPUT)
     ${CMAKE_CURRENT_BINARY_DIR}/xml/all.xml
     ${CMAKE_CURRENT_BINARY_DIR}/xml/index.xml
     STYLESHEET ${CMAKE_CURRENT_BINARY_DIR}/xml/combine.xslt
-    COMMENT "Collecting Doxygen XML output for Boost.${NEXT_PROJECT_NAME}...")
+    COMMENT "Collecting Doxygen XML output for Next.${NEXT_PROJECT_NAME}...")
 
   # Transform single Doxygen XML file into BoostBook XML
   xsl_transform(${OUTPUT}
     ${CMAKE_CURRENT_BINARY_DIR}/xml/all.xml
-    STYLESHEET ${NEXTBOOK_XSL_DIR}/doxygen/doxygen2nextbook.xsl
-    COMMENT "Transforming Doxygen XML into BoostBook XML for Boost.${NEXT_PROJECT_NAME}...")
-endmacro(doxygen_to_nextbook)
+    STYLESHEET ${BOOSTBOOK_XSL_DIR}/doxygen/doxygen2boostbook.xsl
+    COMMENT "Transforming Doxygen XML into BoostBook XML for Next.${NEXT_PROJECT_NAME}...")
+endmacro(doxygen_to_boostbook)
 
 # Adds documentation for the current library or tool project
 #
@@ -226,6 +232,11 @@ macro(next_add_documentation SOURCE)
     ""
     ${ARGN})
 
+
+  message( "THIS_DOC = ${THIS_DOC}" )
+  message( "SOURCE = ${SOURCE}" )
+  message( "NEXT_PROJECT_NAME = ${NEXT_PROJECT_NAME}")
+
   # If SOURCE is not a full path, it's in the current source
   # directory.
   get_filename_component(THIS_DOC_SOURCE_PATH ${SOURCE} PATH)
@@ -240,24 +251,24 @@ macro(next_add_documentation SOURCE)
   # file.
   if (THIS_DOC_HEADERS)
     set(DOC_HEADER_FILES)
-    set(DOC_NEXTBOOK_FILE)
+    set(DOC_BOOSTBOOK_FILE)
     foreach(HEADER ${THIS_DOC_HEADERS})
       get_filename_component(HEADER_EXT ${HEADER} EXT)
       string(TOUPPER ${HEADER_EXT} HEADER_EXT)
       if (HEADER_EXT STREQUAL ".XML")
-        if (DOC_NEXTBOOK_FILE)
+        if (DOC_BOOSTBOOK_FILE)
           # Generate this BoostBook file from the headers
-          doxygen_to_nextbook(
-            ${CMAKE_CURRENT_BINARY_DIR}/${DOC_NEXTBOOK_FILE}
+          doxygen_to_boostbook(
+            ${CMAKE_CURRENT_BINARY_DIR}/${DOC_BOOSTBOOK_FILE}
             ${DOC_HEADER_FILES}
             PARAMETERS ${THIS_DOC_DOXYGEN_PARAMETERS})
           list(APPEND THIS_DOC_DEFAULT_ARGS 
-            ${CMAKE_CURRENT_BINARY_DIR}/${DOC_NEXTBOOK_FILE})
+            ${CMAKE_CURRENT_BINARY_DIR}/${DOC_BOOSTBOOK_FILE})
         endif()
-        set(DOC_NEXTBOOK_FILE ${HEADER})
+        set(DOC_BOOSTBOOK_FILE ${HEADER})
         set(DOC_HEADER_FILES)
       else()
-        if (NOT DOC_NEXTBOOK_FILE)
+        if (NOT DOC_BOOSTBOOK_FILE)
           message(SEND_ERROR 
             "HEADERS argument to next_add_documentation must start with a BoostBook XML file name for output")
         endif()
@@ -267,12 +278,12 @@ macro(next_add_documentation SOURCE)
 
     if (DOC_HEADER_FILES)
       # Generate this BoostBook file from the headers
-      doxygen_to_nextbook(
-        ${CMAKE_CURRENT_BINARY_DIR}/${DOC_NEXTBOOK_FILE}
+      doxygen_to_boostbook(
+        ${CMAKE_CURRENT_BINARY_DIR}/${DOC_BOOSTBOOK_FILE}
         ${DOC_HEADER_FILES}
         PARAMETERS ${THIS_DOC_DOXYGEN_PARAMETERS})
       list(APPEND THIS_DOC_DEFAULT_ARGS 
-        ${CMAKE_CURRENT_BINARY_DIR}/${DOC_NEXTBOOK_FILE})
+        ${CMAKE_CURRENT_BINARY_DIR}/${DOC_BOOSTBOOK_FILE})
 
     endif()
   endif (THIS_DOC_HEADERS)
@@ -283,17 +294,20 @@ macro(next_add_documentation SOURCE)
   string(TOUPPER ${THIS_DOC_EXT} THIS_DOC_EXT)
   if (THIS_DOC_EXT STREQUAL ".QBK")
     if (BUILD_QUICKBOOK)
+      if(WIN32)
+        set( QUICKBOOK "${CMAKE_CURRENT_SOURCE_DIR}/../../../external/win32/boost/bin/quickbook.exe" )
+      endif(WIN32)
       # Transform Quickbook into BoostBook XML
       get_filename_component(SOURCE_FILENAME ${SOURCE} NAME_WE)
-      set(NEXTBOOK_FILE ${SOURCE_FILENAME}.xml)
-      add_custom_command(OUTPUT ${NEXTBOOK_FILE}
-        COMMAND quickbook "--output-file=${NEXTBOOK_FILE}"
+      set(BOOSTBOOK_FILE ${SOURCE_FILENAME}.xml)
+      add_custom_command(OUTPUT ${BOOSTBOOK_FILE}
+        COMMAND ${QUICKBOOK} "--output-file=${BOOSTBOOK_FILE}"
         ${THIS_DOC_SOURCE_PATH} 
         DEPENDS ${THIS_DOC_SOURCE_PATH} ${THIS_DOC_DEFAULT_ARGS}
-        COMMENT "Generating BoostBook documentation for Boost.${NEXT_PROJECT_NAME}...")
+        COMMENT "Generating BoostBook documentation for Next.${NEXT_PROJECT_NAME}...")
 
       # Transform BoostBook into other formats
-      next_add_documentation(${CMAKE_CURRENT_BINARY_DIR}/${NEXTBOOK_FILE})
+      next_add_documentation(${CMAKE_CURRENT_BINARY_DIR}/${BOOSTBOOK_FILE})
     else()
       message(SEND_ERROR 
         "Quickbook is required to build Boost documentation.\nQuickbook can be built by enabling the BUILD_QUICKBOOK.")
@@ -304,9 +318,9 @@ macro(next_add_documentation SOURCE)
     set(DOCBOOK_FILE ${SOURCE_FILENAME}.docbook)
     xsl_transform(${DOCBOOK_FILE} ${THIS_DOC_SOURCE_PATH} 
       ${THIS_DOC_DEFAULT_ARGS}
-      STYLESHEET ${NEXTBOOK_XSL_DIR}/docbook.xsl
+      STYLESHEET ${BOOSTBOOK_XSL_DIR}/docbook.xsl
       CATALOG ${CMAKE_BINARY_DIR}/catalog.xml
-      COMMENT "Generating DocBook documentation for Boost.${NEXT_PROJECT_NAME}..."
+      COMMENT "Generating DocBook documentation for Next.${NEXT_PROJECT_NAME}..."
       MAKE_TARGET ${NEXT_PROJECT_NAME}-docbook)
 
     # Transform DocBook into other formats
@@ -317,23 +331,25 @@ macro(next_add_documentation SOURCE)
       xsl_transform(
         ${CMAKE_CURRENT_BINARY_DIR}/html 
         ${THIS_DOC_SOURCE_PATH} 
-        STYLESHEET ${NEXTBOOK_XSL_DIR}/html.xsl
+        STYLESHEET ${BOOSTBOOK_XSL_DIR}/html.xsl
         CATALOG ${CMAKE_BINARY_DIR}/catalog.xml
         DIRECTORY HTML.manifest
-        PARAMETERS admon.graphics.path=images
-                   navig.graphics.path=images
+        PARAMETERS admon.graphics.path=../images/
+                   navig.graphics.path=../images/
                    next.image.src=next.png
-        COMMENT "Generating HTML documentaiton for Boost.${NEXT_PROJECT_NAME}..."
+        COMMENT "Generating HTML documentaiton for Next.${NEXT_PROJECT_NAME}..."
         MAKE_TARGET ${NEXT_PROJECT_NAME}-html)
 
-      add_custom_command(TARGET ${NEXT_PROJECT_NAME}-html
-	POST_BUILD
-	COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/doc/src/nextbook.css ${CMAKE_CURRENT_BINARY_DIR}/html
-	COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/next.png ${CMAKE_CURRENT_BINARY_DIR}/html
-	)
+#     add_custom_command(TARGET ${NEXT_PROJECT_NAME}-html
+#       POST_BUILD
+#       COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/doc/src/boostbook.css ${CMAKE_CURRENT_BINARY_DIR}/html
+#       COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/next.png ${CMAKE_CURRENT_BINARY_DIR}/html
+#     )
+
       # Install generated documentation
-      install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html 
-        DESTINATION share/next-${NEXT_VERSION}
+
+      install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html/
+        DESTINATION share/next-${NEXT_VERSION}/libs/${NEXT_PROJECT_NAME}/
         COMPONENT ${ULIBNAME}_DOCS
         PATTERN "*.manifest" EXCLUDE)
     endif ()
@@ -343,10 +359,10 @@ macro(next_add_documentation SOURCE)
       xsl_transform(
         ${CMAKE_CURRENT_BINARY_DIR}/man 
         ${THIS_DOC_SOURCE_PATH} 
-        STYLESHEET ${NEXTBOOK_XSL_DIR}/manpages.xsl
+        STYLESHEET ${BOOSTBOOK_XSL_DIR}/manpages.xsl
         CATALOG ${CMAKE_BINARY_DIR}/catalog.xml
         DIRECTORY man.manifest
-        COMMENT "Generating man pages for Boost.${NEXT_PROJECT_NAME}..."
+        COMMENT "Generating man pages for Next.${NEXT_PROJECT_NAME}..."
         MAKE_TARGET ${NEXT_PROJECT_NAME}-man)
 
       # Install man pages
@@ -407,8 +423,9 @@ endmacro(download_docbook_dtd)
 macro(download_docbook_xsl)
   if (NOT DOCBOOK_XSL_DIR)
     set(DOCBOOK_XSL_FILENAME "docbook-xsl-${WANT_DOCBOOK_XSL_VERSION}.zip")
-    set(DOCBOOK_XSL_URL 
-      "${SOURCEFORGE_MIRROR}/sourceforge/docbook/${DOCBOOK_XSL_FILENAME}")
+#   set(DOCBOOK_XSL_URL
+#     "${SOURCEFORGE_MIRROR}/sourceforge/docbook/${DOCBOOK_XSL_FILENAME}")
+    set(DOCBOOK_XSL_URL "http://downloads.sourceforge.net/project/docbook/docbook-xsl/${WANT_DOCBOOK_XSL_VERSION}/${DOCBOOK_XSL_FILENAME}?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fdocbook%2Ffiles%2Fdocbook-xsl%2F1.73.2%2F&ts=1379446845&use_mirror=switch")
     message(STATUS "Downloading DocBook XSL from ${DOCBOOK_XSL_URL}...")
     file(DOWNLOAD 
       "${DOCBOOK_XSL_URL}"
@@ -455,20 +472,20 @@ find_path(DOCBOOK_DTD_DIR docbookx.dtd
 find_path(DOCBOOK_XSL_DIR html/html.xsl
   PATHS "${CMAKE_BINARY_DIR}/docbook-xsl-${WANT_DOCBOOK_XSL_VERSION}"
   # ubuntu puts 'em here
-  /usr/share/xml/docbook/stylesheet/nwalsh 
+  /usr/share/xml/docbook/stylesheet/nwalsh
   DOC "Path to the DocBook XSL stylesheets")
 
 # Find the BoostBook DTD (it should be in the distribution!)
-find_path(NEXTBOOK_DTD_DIR nextbook.dtd
-  PATHS ${CMAKE_SOURCE_DIR}/tools/nextbook/dtd
+find_path(BOOSTBOOK_DTD_DIR boostbook.dtd
+  PATHS ${CMAKE_SOURCE_DIR}/external/win32/boost/share/boostbook/dtd
   DOC "Path to the BoostBook DTD")
-mark_as_advanced(NEXTBOOK_DTD_DIR)
+mark_as_advanced(BOOSTBOOK_DTD_DIR)
 
 # Find the BoostBook XSL stylesheets (they should be in the distribution!)
-find_path(NEXTBOOK_XSL_DIR docbook.xsl
-  PATHS ${CMAKE_SOURCE_DIR}/tools/nextbook/xsl
+find_path(BOOSTBOOK_XSL_DIR docbook.xsl
+  PATHS ${CMAKE_SOURCE_DIR}/external/win32/boost/share/boostbook/xsl
   DOC "Path to the BoostBook XSL stylesheets")
-mark_as_advanced(NEXTBOOK_XSL_DIR)
+mark_as_advanced(BOOSTBOOK_XSL_DIR)
 
 if (XSLTPROC_EXECUTABLE AND DOXYGEN)
   if (DOCBOOK_DTD_DIR AND DOCBOOK_XSL_DIR)
@@ -477,6 +494,7 @@ if (XSLTPROC_EXECUTABLE AND DOXYGEN)
     option(BUILD_DOCUMENTATION_HTML "Whether to build HTML documentation" ON)
     option(BUILD_DOCUMENTATION_MAN_PAGES "Whether to build Unix man pages" ON)
 
+    message( "CONFIGURE FILE 1: ${${CMAKE_SOURCE_DIR}/tools/build/CMake/catalog.xml.in} to ${CMAKE_BINARY_DIR}/catalog.xml" )
     # Generate an XML catalog file.
     configure_file(${CMAKE_SOURCE_DIR}/tools/build/CMake/catalog.xml.in
       ${CMAKE_BINARY_DIR}/catalog.xml 
@@ -486,6 +504,7 @@ if (XSLTPROC_EXECUTABLE AND DOXYGEN)
     # DTD and XSL stylesheets as part of autoconfiguration.
     find_program(UNZIP unzip DOC "Used to extract ZIP archives")
 
+    message( "unzip = ${UNZIP}")
     if (UNZIP)
       option(DOCBOOK_AUTOCONFIG 
         "Automatically download and configure DocBook DTD and XSL" OFF)
@@ -496,6 +515,12 @@ if (XSLTPROC_EXECUTABLE AND DOXYGEN)
         message(STATUS "Initiating DocBook DTD and XSL autoconfiguration...")
         download_docbook_dtd()
         download_docbook_xsl()
+
+      message( "CONFIGURE FILE 2: ${${CMAKE_SOURCE_DIR}/tools/build/CMake/catalog.xml.in} to ${CMAKE_BINARY_DIR}/catalog.xml" )
+      # Generate an XML catalog file.
+      configure_file(${CMAKE_SOURCE_DIR}/tools/build/CMake/catalog.xml.in
+        ${CMAKE_BINARY_DIR}/catalog.xml
+        @ONLY)
       endif (DOCBOOK_AUTOCONFIG)
     endif()
   endif()

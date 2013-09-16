@@ -64,6 +64,7 @@ next_report_pretty("Next.CMake version" NEXT_CMAKE_VERSION)
 
 include(NextConfig)
 include(NextCore)
+include(NextExternals)
 include(NextDocs)
 include(NextTesting)
 ##########################################################################
@@ -149,7 +150,7 @@ next_report_pretty("Install prefix" CMAKE_INSTALL_PREFIX)
 next_report_pretty("Install include dir" NEXT_INCLUDE_INSTALL_DIR)
 next_report_pretty("Install lib dir" NEXT_LIB_INSTALL_DIR)
 
-include(NextExternals)
+
 
 
 install(DIRECTORY next

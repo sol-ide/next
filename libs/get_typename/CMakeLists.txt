@@ -10,8 +10,8 @@ next_library_project(
   get_typename
   SRCDIRS  src
   TESTDIRS test
+  DOCDIRS doc
   HEADERS  get_typename/get_typename.hpp get_typename
-  #  DOCDIRS 
   DESCRIPTION  "The Next.GetTypename library is an implementation of blablaba"
   MODULARIZED
   AUTHORS  "Sylvain Oliver <oliver.sylvain -at- gmail.com>"

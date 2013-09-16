@@ -1,0 +1,41 @@
+[/============================================================================
+  Next.Event
+
+  Copyright (c) 2013 Sylvain Oliver
+
+  Use, modification and distribution is subject to the Boost Software License,
+  Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
+  http://www.boost.org/LICENSE_1_0.txt)
+=============================================================================/]
+
+[library Next.Event
+    [quickbook 1.4]
+    [copyright 2013 Sylvain Oliver]
+    [purpose Event library]
+    [license
+        Distributed under the Boost Software License, Version 1.0.
+        (See accompanying file LICENSE_1_0.txt or copy at
+        [@http://www.boost.org/LICENSE_1_0.txt])
+    ]
+    [authors [Oliver, Sylvain]]
+    [category template]
+    [category generic]
+]
+
+[def __next__ Next]
+[def __next_event__ Next.Event]
+
+[section Introduction]
+
+The __next_event__ library is an implementation of event dispatching. It defines :
+
+* a dispatcher
+* events
+* events handlers
+
+The dispatcher manages a thread pool for sending event. Each event handler has a thread group and each thread group can handle events sequencialy ( without synchronization primitives as mutex )
+
+[endsect]
+
+[include tutorial.qbk]
+[include todo.qbk]

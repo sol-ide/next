@@ -1,0 +1,24 @@
+[/============================================================================
+  Next.GetTypename
+
+  Copyright (c) 2013 Sylvain Oliver
+
+  Use, modification and distribution is subject to the Boost Software License,
+  Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
+  http://www.boost.org/LICENSE_1_0.txt)
+=============================================================================/]
+
+[section Todo]
+
+This todo section shows some of the features of __next_get_typename__
+that should be implemented.
+
+[import ../example/todo.cpp]
+
+[h3 Have a get_typename and a get_cv_typename]
+
+get_typename should return the typename without const/volatile qualifier. The get_cv_typename would return the complete typename
+
+[todo_get_cv_typename]
+
+[endsect]

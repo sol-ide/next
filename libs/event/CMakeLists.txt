@@ -10,8 +10,9 @@ next_library_project(
   event
   SRCDIRS  src
   TESTDIRS test
+  EXAMPLEDIRS example
   HEADERS  event/event.hpp event
-  #  DOCDIRS 
+  DOCDIRS  doc
   DESCRIPTION  "The Next.Event library is an implementation of blablaba"
   MODULARIZED
   AUTHORS  "Sylvain Oliver <oliver.sylvain -at- gmail.com>"

@@ -2,7 +2,7 @@
 <!DOCTYPE boostbook PUBLIC "-//Boost//DTD BoostBook XML V1.0//EN"
   "http://www.boost.org/tools/boostbook/dtd/boostbook.dtd">
 <boostbook id="boost" xmlns:xi="http://www.w3.org/2001/XInclude"
-           last-revision="$Date$">
+           last-revision="$Date: 2013-08-25 21:09:59 +0200 (dim., 25 août 2013) $">
   <title>The Boost C++ Libraries BoostBook Documentation Subset</title>
 
   <preface id="about">
@@ -55,6 +55,8 @@
      </libraryinfo>
    </library>
 
+   <xi:include href="atomic.xml"/>
+
    <library name="Bind" dirname="bind" html-only="1">
      <libraryinfo>
        <author>
@@ -96,17 +98,7 @@
 
    <xi:include href="chrono.xml"/>
 
-   <library name="Circular Buffer" dirname="circular_buffer" html-only="1"
-            url="../../libs/circular_buffer/index.html">
-     <libraryinfo>
-       <author>
-         <firstname>Jan</firstname>
-         <surname>Gaspar</surname>
-       </author>
-       <librarypurpose>A STL compliant container also known as ring or cyclic buffer</librarypurpose>
-       <librarycategory name="category:containers"/> 
-     </libraryinfo>
-   </library>
+   <xi:include href="circular_buffer.auto_index.docbook"/>
 
    <library name="Compatibility" dirname="compatibility" html-only="1">
      <libraryinfo>
@@ -187,7 +179,7 @@
      </libraryinfo>
    </library>
 
-   <xi:include href="container.xml"/>
+   <xi:include href="container.auto_index.docbook"/>
 
    <library name="Conversion" dirname="conversion" html-only="1"
             url="../../libs/conversion/index.html">
@@ -295,6 +287,8 @@
      </libraryinfo>
    </library>
 
+   <xi:include href="heap.xml"/>
+
    <library name="Integer" dirname="integer" html-only="1"
             url="../../libs/integer/index.html">
      <libraryinfo>
@@ -308,7 +302,7 @@
      </libraryinfo>
    </library>
 
-   <xi:include href="interprocess.xml"/>
+   <xi:include href="interprocess.auto_index.docbook"/>
 
    <library name="Interval" dirname="numeric/interval" html-only="1"
             url="../../libs/numeric/interval/doc/index.html">
@@ -331,7 +325,7 @@
      </libraryinfo>
    </library>
 
-   <xi:include href="intrusive.xml"/>
+   <xi:include href="intrusive.auto_index.docbook"/>
 
    <library name="I/O State Savers" dirname="io" html-only="1">
      <libraryinfo>
@@ -369,6 +363,8 @@
    <xi:include href="../../libs/lambda/doc/lambda.xml"/>
 
    <xi:include href="lexical_cast.xml"/>
+
+   <xi:include href="lockfree.xml"/>
 
    <library name="Math" dirname="math" html-only="1">
      <libraryinfo>
@@ -445,18 +441,8 @@
      </libraryinfo>
    </library>
 
-   <library name="Multi Array" dirname="multi_array" html-only="1">
-     <libraryinfo>
-       <author>
-         <firstname>Ron</firstname>
-         <surname>Garcia</surname>
-       </author>
 
-       <librarypurpose>Multidimensional containers and adaptors for arrays of contiguous data</librarypurpose>
-       <librarycategory name="category:math"/>
-       <librarycategory name="category:containers"/>
-     </libraryinfo>
-   </library>
+   <xi:include href="../../libs/multi_array/doc/xml/bbref.xml"/>
 
    <library name="Operators" dirname="utility" html-only="1">
      <libraryinfo>
@@ -688,6 +674,8 @@
        <librarycategory name="category:data-structures"/>
      </libraryinfo>
    </library>
+    
+   <xi:include href="type_erasure.xml"/>
 
    <library name="Type Traits" dirname="type_traits" html-only="1">
      <libraryinfo>
@@ -757,11 +745,15 @@
         or for use with their own applications.
       </para>
     </partintro>
+    <xi:include href="boost-doc-tools.xml"/>
     <xi:include href="../../tools/boostbook/doc/boostbook.xml"/>
     <xi:include href="quickbook.xml"/>
     <xi:include href="jam_docs.xml"/>
     <xi:include href="../../tools/build/v2/doc/src/userman.xml"/>
   </part>
 </boostbook>
+
+
+
 
 

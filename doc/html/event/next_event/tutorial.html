@@ -1,0 +1,162 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<title>Tutorial</title>
+<link rel="stylesheet" href="../../boostbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<link rel="home" href="../index.html" title="Chapter&#160;1.&#160;Next.Event">
+<link rel="up" href="../index.html" title="Chapter&#160;1.&#160;Next.Event">
+<link rel="prev" href="../index.html" title="Chapter&#160;1.&#160;Next.Event">
+<link rel="next" href="todo.html" title="Todo">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table cellpadding="2" width="100%"><tr><td valign="top"></td></tr></table>
+<hr>
+<div class="spirit-nav">
+<a accesskey="p" href="../index.html"><img src="../../images/prev.png" alt="Prev"></a><a accesskey="u" href="../index.html"><img src="../../images/up.png" alt="Up"></a><a accesskey="h" href="../index.html"><img src="../../images/home.png" alt="Home"></a><a accesskey="n" href="todo.html"><img src="../../images/next.png" alt="Next"></a>
+</div>
+<div class="section">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="next_event.tutorial"></a><a class="link" href="tutorial.html" title="Tutorial">Tutorial</a>
+</h2></div></div></div>
+<p>
+      This tutorial section shows some of the features of Next.Event in the form
+      of annotated, relatively simple, code snippets.
+    </p>
+<p>
+      Before each example, includes are :
+    </p>
+<p>
+      
+</p>
+<pre class="programlisting"><span class="preprocessor">#include</span> <span class="special">&lt;</span><span class="identifier">next</span><span class="special">/</span><span class="identifier">event</span><span class="special">/</span><span class="identifier">dispatcher</span><span class="special">.</span><span class="identifier">hpp</span><span class="special">&gt;</span>
+<span class="preprocessor">#include</span> <span class="special">&lt;</span><span class="identifier">next</span><span class="special">/</span><span class="identifier">event</span><span class="special">/</span><span class="identifier">event_handler</span><span class="special">.</span><span class="identifier">hpp</span><span class="special">&gt;</span>
+<span class="preprocessor">#include</span> <span class="special">&lt;</span><span class="identifier">next</span><span class="special">/</span><span class="identifier">event</span><span class="special">/</span><span class="identifier">event</span><span class="special">.</span><span class="identifier">hpp</span><span class="special">&gt;</span>
+</pre>
+<p>
+    </p>
+<a name="next_event.tutorial.create_the_dispatcher"></a><h4>
+<a name="id1505090"></a>
+      <a class="link" href="tutorial.html#next_event.tutorial.create_the_dispatcher">Create the dispatcher</a>
+    </h4>
+<p>
+      
+</p>
+<pre class="programlisting"><span class="identifier">next</span><span class="special">::</span><span class="identifier">dispatcher</span> <span class="identifier">d</span><span class="special">{</span> <span class="identifier">next</span><span class="special">::</span><span class="identifier">thread_pool_size_t</span><span class="special">{</span> <span class="number">4</span> <span class="special">}</span> <span class="special">}</span>
+</pre>
+<p>
+    </p>
+<a name="next_event.tutorial.declare_an_event"></a><h4>
+<a name="id1505161"></a>
+      <a class="link" href="tutorial.html#next_event.tutorial.declare_an_event">Declare an event</a>
+    </h4>
+<p>
+      Each event has a signature. This signature specifie the return type and the
+      type of the arguments You can declare an event with one integer parameter returning
+      a bool as follow.
+    </p>
+<p>
+      
+</p>
+<pre class="programlisting"><span class="keyword">namespace</span> <span class="identifier">mine</span>
+<span class="special">{</span>
+  <span class="keyword">struct</span> <span class="identifier">is_less_than_ten</span> <span class="special">:</span> <span class="identifier">next</span><span class="special">::</span><span class="identifier">event</span><span class="special">&lt;</span> <span class="keyword">bool</span><span class="special">(</span> <span class="keyword">int</span> <span class="special">)</span> <span class="special">&gt;{};</span>
+<span class="special">}</span>
+</pre>
+<p>
+    </p>
+<a name="next_event.tutorial.listen_an_event"></a><h4>
+<a name="id1505257"></a>
+      <a class="link" href="tutorial.html#next_event.tutorial.listen_an_event">listen an event</a>
+    </h4>
+<p>
+      The event handler class can call a functor when an event is received. It is
+      registered as follow
+    </p>
+<p>
+      
+</p>
+<pre class="programlisting"><span class="identifier">next</span><span class="special">::</span><span class="identifier">dispatcher</span> <span class="identifier">d</span><span class="special">{</span> <span class="identifier">next</span><span class="special">::</span><span class="identifier">thread_pool_size_t</span><span class="special">{</span> <span class="number">4</span> <span class="special">}</span> <span class="special">};</span>
+
+<span class="identifier">next</span><span class="special">::</span><span class="identifier">event_handler</span> <span class="identifier">h</span><span class="special">{</span> <span class="identifier">d</span> <span class="special">};</span>
+
+<span class="identifier">h</span><span class="special">.</span><span class="identifier">listen</span><span class="special">&lt;</span> <span class="identifier">mine</span><span class="special">::</span><span class="identifier">is_less_than_ten</span> <span class="special">&gt;(</span>
+  <span class="special">[](</span> <span class="keyword">int</span> <span class="identifier">x</span> <span class="special">)</span> <span class="special">-&gt;</span> <span class="keyword">bool</span>
+  <span class="special">{</span>
+    <span class="keyword">return</span> <span class="identifier">x</span> <span class="special">&lt;</span> <span class="number">10</span><span class="special">;</span>
+  <span class="special">}</span>
+<span class="special">);</span>
+</pre>
+<p>
+    </p>
+<a name="next_event.tutorial.send_an_event_to_dispatcher"></a><h4>
+<a name="id1505460"></a>
+      <a class="link" href="tutorial.html#next_event.tutorial.send_an_event_to_dispatcher">send an event
+      to dispatcher</a>
+    </h4>
+<p>
+      When you send an send an event to the dispatcher, the return type is the futur
+      of a boost::optional of the return type of the specified event
+    </p>
+<p>
+      
+</p>
+<pre class="programlisting"><span class="identifier">next</span><span class="special">::</span><span class="identifier">dispatcher</span> <span class="identifier">d</span><span class="special">{</span> <span class="identifier">next</span><span class="special">::</span><span class="identifier">thread_pool_size_t</span><span class="special">{</span> <span class="number">4</span> <span class="special">}</span> <span class="special">};</span>
+
+<span class="identifier">next</span><span class="special">::</span><span class="identifier">event_handler</span> <span class="identifier">h</span><span class="special">{</span> <span class="identifier">d</span> <span class="special">};</span>
+
+<span class="identifier">std</span><span class="special">::</span><span class="identifier">future</span><span class="special">&lt;</span> <span class="identifier">boost</span><span class="special">::</span><span class="identifier">optional</span><span class="special">&lt;</span> <span class="keyword">bool</span> <span class="special">&gt;</span> <span class="special">&gt;</span> <span class="identifier">future_result</span> <span class="special">=</span> <span class="identifier">d</span><span class="special">.</span><span class="identifier">send_event</span><span class="special">&lt;</span> <span class="identifier">mine</span><span class="special">::</span><span class="identifier">is_less_than_ten</span> <span class="special">&gt;(</span> <span class="number">1</span> <span class="special">).</span><span class="identifier">to</span><span class="special">(</span> <span class="identifier">h</span> <span class="special">);</span>
+</pre>
+<p>
+    </p>
+<p>
+      When the event has been treated by the dispatcher, the future is notified.
+      If the event has been handled by one listener, the optional stores the return
+      value, else the optional is empty.
+    </p>
+<p>
+      
+</p>
+<pre class="programlisting"><span class="identifier">std</span><span class="special">::</span><span class="identifier">vector</span><span class="special">&lt;</span> <span class="identifier">std</span><span class="special">::</span><span class="identifier">future</span><span class="special">&lt;</span> <span class="identifier">boost</span><span class="special">::</span><span class="identifier">optional</span><span class="special">&lt;</span> <span class="keyword">bool</span> <span class="special">&gt;</span> <span class="special">&gt;</span> <span class="special">&gt;</span> <span class="identifier">result_vector</span><span class="special">;</span>
+<span class="identifier">std</span><span class="special">::</span><span class="identifier">size_t</span> <span class="identifier">max</span> <span class="special">=</span> <span class="number">20</span><span class="special">;</span>
+
+<span class="keyword">for</span><span class="special">(</span> <span class="identifier">std</span><span class="special">::</span><span class="identifier">size_t</span> <span class="identifier">current</span> <span class="special">=</span> <span class="number">0</span> <span class="special">;</span> <span class="identifier">current</span> <span class="special">&lt;</span> <span class="identifier">max</span> <span class="special">;</span> <span class="special">++</span><span class="identifier">current</span> <span class="special">)</span>
+<span class="special">{</span>
+   <span class="identifier">result_vector</span><span class="special">.</span><span class="identifier">push_back</span><span class="special">(</span> <span class="identifier">d</span><span class="special">.</span><span class="identifier">send_event</span><span class="special">&lt;</span> <span class="identifier">mine</span><span class="special">::</span><span class="identifier">is_less_than_ten</span> <span class="special">&gt;(</span> <span class="number">1</span> <span class="special">).</span><span class="identifier">to</span><span class="special">(</span> <span class="identifier">h</span> <span class="special">)</span> <span class="special">);</span>
+<span class="special">}</span>
+
+<span class="keyword">for</span><span class="special">(</span> <span class="identifier">std</span><span class="special">::</span><span class="identifier">size_t</span> <span class="identifier">current</span> <span class="special">=</span> <span class="number">0</span> <span class="special">;</span> <span class="identifier">current</span> <span class="special">&lt;</span> <span class="identifier">max</span> <span class="special">;</span> <span class="special">++</span><span class="identifier">current</span> <span class="special">)</span>
+<span class="special">{</span>
+  <span class="identifier">boost</span><span class="special">::</span><span class="identifier">optional</span><span class="special">&lt;</span> <span class="keyword">bool</span> <span class="special">&gt;&amp;</span> <span class="identifier">optional_result</span> <span class="special">=</span> <span class="identifier">result_vector</span><span class="special">[</span> <span class="identifier">current</span> <span class="special">].</span><span class="identifier">get</span><span class="special">();</span>
+  <span class="keyword">if</span><span class="special">(</span> <span class="identifier">optional_result</span> <span class="special">)</span>
+  <span class="special">{</span>
+    <span class="identifier">std</span><span class="special">::</span><span class="identifier">cout</span> <span class="special">&lt;&lt;</span> <span class="identifier">current</span> <span class="special">&lt;&lt;</span> <span class="string">" is less than ten : "</span> <span class="special">&lt;&lt;</span> <span class="special">(</span> <span class="special">*</span><span class="identifier">optional_result</span> <span class="special">?</span> <span class="string">"true"</span> <span class="special">:</span> <span class="string">"false"</span> <span class="special">)</span> <span class="special">&lt;&lt;</span> <span class="identifier">std</span><span class="special">::</span><span class="identifier">endl</span><span class="special">;</span>
+  <span class="special">}</span>
+  <span class="keyword">else</span>
+  <span class="special">{</span>
+    <span class="identifier">std</span><span class="special">::</span><span class="identifier">cout</span> <span class="special">&lt;&lt;</span> <span class="string">"Event has not been received"</span> <span class="special">&lt;&lt;</span> <span class="identifier">std</span><span class="special">::</span><span class="identifier">endl</span><span class="special">;</span>
+  <span class="special">}</span>
+
+<span class="special">}</span>
+</pre>
+<p>
+    </p>
+<p>
+      If the event has no return type, the result is just a std::future&lt; bool
+      &gt;. The boolean value depends if the event has been handled or not.
+    </p>
+</div>
+<table xmlns:rev="http://www.cs.rpi.edu/~gregod/boost/tools/doc/revision" width="100%"><tr>
+<td align="left"></td>
+<td align="right"><div class="copyright-footer">Copyright &#169; 2013 Sylvain Oliver<p>
+        Distributed under the Boost Software License, Version 1.0. (See accompanying
+        file LICENSE_1_0.txt or copy at <a href="http://www.boost.org/LICENSE_1_0.txt" target="_top">http://www.boost.org/LICENSE_1_0.txt</a>)
+      </p>
+</div></td>
+</tr></table>
+<hr>
+<div class="spirit-nav">
+<a accesskey="p" href="../index.html"><img src="../../images/prev.png" alt="Prev"></a><a accesskey="u" href="../index.html"><img src="../../images/up.png" alt="Up"></a><a accesskey="h" href="../index.html"><img src="../../images/home.png" alt="Home"></a><a accesskey="n" href="todo.html"><img src="../../images/next.png" alt="Next"></a>
+</div>
+</body>
+</html>

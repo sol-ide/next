@@ -1,0 +1,24 @@
+[/============================================================================
+  Next.GetTypename
+
+  Copyright (c) 2013 Sylvain Oliver
+
+  Use, modification and distribution is subject to the Boost Software License,
+  Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
+  http://www.boost.org/LICENSE_1_0.txt)
+=============================================================================/]
+
+[section Tutorial]
+
+[import ../example/tutorial.cpp]
+This tutorial section shows some of the features of __next_get_typename__
+in the form of annotated, relatively simple, code snippets.
+
+Before each example, includes are :
+
+[tutorial_includes]
+[h3 Get typename from a struct or a class name]
+
+[tutorial_get_typename]
+
+[endsect]

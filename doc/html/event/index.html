@@ -1,0 +1,70 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<title>Chapter&#160;1.&#160;Next.Event</title>
+<link rel="stylesheet" href="../boostbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<link rel="home" href="index.html" title="Chapter&#160;1.&#160;Next.Event">
+<link rel="next" href="next_event/tutorial.html" title="Tutorial">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table cellpadding="2" width="100%"><tr><td valign="top"></td></tr></table>
+<hr>
+<div class="spirit-nav"><a accesskey="n" href="next_event/tutorial.html"><img src="../images/next.png" alt="Next"></a></div>
+<div class="chapter">
+<div class="titlepage"><div>
+<div><h2 class="title">
+<a name="next_event"></a>Chapter&#160;1.&#160;Next.Event</h2></div>
+<div><div class="author"><h3 class="author">
+<span class="firstname">Sylvain</span> <span class="surname">Oliver</span>
+</h3></div></div>
+<div><p class="copyright">Copyright &#169; 2013 Sylvain Oliver</p></div>
+<div><div class="legalnotice">
+<a name="id1504889"></a><p>
+        Distributed under the Boost Software License, Version 1.0. (See accompanying
+        file LICENSE_1_0.txt or copy at <a href="http://www.boost.org/LICENSE_1_0.txt" target="_top">http://www.boost.org/LICENSE_1_0.txt</a>)
+      </p>
+</div></div>
+</div></div>
+<div class="toc">
+<p><b>Table of Contents</b></p>
+<dl class="toc">
+<dt><span class="section"><a href="index.html#next_event.introduction">Introduction</a></span></dt>
+<dt><span class="section"><a href="next_event/tutorial.html">Tutorial</a></span></dt>
+<dt><span class="section"><a href="next_event/todo.html">Todo</a></span></dt>
+</dl>
+</div>
+<div class="section">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="next_event.introduction"></a><a class="link" href="index.html#next_event.introduction" title="Introduction">Introduction</a>
+</h2></div></div></div>
+<p>
+      The Next.Event library is an implementation of event dispatching. It defines
+      :
+    </p>
+<div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
+<li class="listitem">
+          a dispatcher
+        </li>
+<li class="listitem">
+          events
+        </li>
+<li class="listitem">
+          events handlers
+        </li>
+</ul></div>
+<p>
+      The dispatcher manages a thread pool for sending event. Each event handler
+      has a thread group and each thread group can handle events sequencialy ( without
+      synchronization primitives as mutex )
+    </p>
+</div>
+</div>
+<table xmlns:rev="http://www.cs.rpi.edu/~gregod/boost/tools/doc/revision" width="100%"><tr>
+<td align="left"><p><small>Last revised: September 25, 2013 at 20:31:24 GMT</small></p></td>
+<td align="right"><div class="copyright-footer"></div></td>
+</tr></table>
+<hr>
+<div class="spirit-nav"><a accesskey="n" href="next_event/tutorial.html"><img src="../images/next.png" alt="Next"></a></div>
+</body>
+</html>
