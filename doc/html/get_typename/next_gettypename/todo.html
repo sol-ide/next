@@ -22,26 +22,13 @@
       This todo section shows some of the features of Next.GetTypename that should
       be implemented.
     </p>
-<a name="next_gettypename.todo.have_a_get_typename_and_a_get_cv_typename"></a><h4>
-<a name="id1491775"></a>
-      <a class="link" href="todo.html#next_gettypename.todo.have_a_get_typename_and_a_get_cv_typename">Have
-      a get_typename and a get_cv_typename</a>
+<a name="next_gettypename.todo.clean_get_cv_typename_code"></a><h4>
+<a name="id1486923"></a>
+      <a class="link" href="todo.html#next_gettypename.todo.clean_get_cv_typename_code">Clean get_cv_typename
+      code</a>
     </h4>
 <p>
-      get_typename should return the typename without const/volatile qualifier. The
-      get_cv_typename would return the complete typename
-    </p>
-<p>
-      
-</p>
-<pre class="programlisting"><span class="keyword">struct</span> <span class="identifier">a_type</span>
-<span class="special">{</span>
-<span class="special">};</span>
-
-<span class="identifier">BOOST_REQUIRE_EQUAL</span><span class="special">(</span> <span class="identifier">next</span><span class="special">::</span><span class="identifier">get_typename</span><span class="special">&lt;</span> <span class="keyword">const</span> <span class="identifier">a_type</span> <span class="special">&gt;(),</span> <span class="string">"a_type"</span> <span class="special">);</span>
-<span class="identifier">BOOST_REQUIRE_EQUAL</span><span class="special">(</span> <span class="identifier">next</span><span class="special">::</span><span class="identifier">get_cv_typename</span><span class="special">&lt;</span> <span class="keyword">const</span> <span class="identifier">a_type</span> <span class="special">&gt;(),</span> <span class="string">"const a_type"</span> <span class="special">);</span>
-</pre>
-<p>
+      get_cv_typename code could be better...
     </p>
 </div>
 <table xmlns:rev="http://www.cs.rpi.edu/~gregod/boost/tools/doc/revision" width="100%"><tr>

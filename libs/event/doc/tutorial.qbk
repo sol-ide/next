@@ -29,12 +29,12 @@ You can declare an event with one integer parameter returning a bool as follow.
 
 [tutorial_declare_event]
 
-[h3 listen an event]
+[h3 Listen an event]
 The event handler class can call a functor when an event is received. It is registered as follow
 
 [tutorial_listen_event]
 
-[h3 send an event to dispatcher]
+[h3 Send an event to dispatcher]
 When you send an send an event to the dispatcher, the return type is the futur of a boost::optional of the return type of the specified event
 
 [tutorial_send_an_event]

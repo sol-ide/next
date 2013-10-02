@@ -30,20 +30,48 @@ void get_typename_of_a_struct()
   BOOST_REQUIRE_EQUAL( next::get_typename< mine::an_event >(), "mine::an_event" );
   BOOST_REQUIRE_EQUAL( next::get_typename< mine::an_increment_event >(), "mine::an_increment_event" );
 
-  BOOST_REQUIRE_EQUAL( next::get_typename< const mine::an_event >(), "const mine::an_event" );
-  BOOST_REQUIRE_EQUAL( next::get_typename< const mine::an_increment_event >(), "const mine::an_increment_event" );
+  BOOST_REQUIRE_EQUAL( next::get_typename< const mine::an_event >(), "mine::an_event" );
+  BOOST_REQUIRE_EQUAL( next::get_typename< const mine::an_increment_event >(), "mine::an_increment_event" );
 
-  BOOST_REQUIRE_EQUAL( next::get_typename< volatile mine::an_event >( ), "volatile mine::an_event" );
-  BOOST_REQUIRE_EQUAL( next::get_typename< volatile mine::an_increment_event >(), "volatile mine::an_increment_event" );
+  BOOST_REQUIRE_EQUAL( next::get_typename< volatile mine::an_event >( ), "mine::an_event" );
+  BOOST_REQUIRE_EQUAL( next::get_typename< volatile mine::an_increment_event >(), "mine::an_increment_event" );
 
-  BOOST_REQUIRE_EQUAL( next::get_typename< const volatile mine::an_event >( ), "volatile const mine::an_event" );
-  BOOST_REQUIRE_EQUAL( next::get_typename< const volatile mine::an_increment_event >( ), "volatile const mine::an_increment_event" );
+  BOOST_REQUIRE_EQUAL( next::get_typename< const volatile mine::an_event >( ), "mine::an_event" );
+  BOOST_REQUIRE_EQUAL( next::get_typename< const volatile mine::an_increment_event >( ), "mine::an_increment_event" );
 
-  // Bug in msvc...
-#ifndef _MSC_VER
-  BOOST_REQUIRE_EQUAL( next::get_typename< const mine::an_event& >(), "const mine::an_event" );
-  BOOST_REQUIRE_EQUAL( next::get_typename< const mine::an_increment_event& >(), "const mine::an_increment_event" );
-#endif
+  BOOST_REQUIRE_EQUAL( next::get_typename< const mine::an_event& >(), "mine::an_event&" );
+  BOOST_REQUIRE_EQUAL( next::get_typename< const mine::an_increment_event& >(), "mine::an_increment_event&" );
+}
+
+void get_cv_typename_of_a_struct()
+{
+
+  BOOST_REQUIRE_EQUAL( next::get_cv_typename< mine::an_event >( ), "mine::an_event" );
+  BOOST_REQUIRE_EQUAL( next::get_cv_typename< mine::an_increment_event >( ), "mine::an_increment_event" );
+
+  BOOST_REQUIRE_EQUAL( next::get_cv_typename< const mine::an_event >( ), "const mine::an_event" );
+  BOOST_REQUIRE_EQUAL( next::get_cv_typename< const mine::an_increment_event >( ), "const mine::an_increment_event" );
+
+  BOOST_REQUIRE_EQUAL( next::get_cv_typename< volatile mine::an_event >( ), "volatile mine::an_event" );
+  BOOST_REQUIRE_EQUAL( next::get_cv_typename< volatile mine::an_increment_event >( ), "volatile mine::an_increment_event" );
+
+  BOOST_REQUIRE_EQUAL( next::get_cv_typename< const volatile mine::an_event >( ), "const volatile mine::an_event" );
+  BOOST_REQUIRE_EQUAL( next::get_cv_typename< const volatile mine::an_increment_event >( ), "const volatile mine::an_increment_event" );
+
+  BOOST_REQUIRE_EQUAL( next::get_cv_typename< const mine::an_event& >( ), "const mine::an_event&" );
+  BOOST_REQUIRE_EQUAL( next::get_cv_typename< const mine::an_increment_event& >( ), "const mine::an_increment_event&" );
+
+  BOOST_REQUIRE_EQUAL( next::get_cv_typename< const mine::an_event* >( ), "const mine::an_event*" );
+  BOOST_REQUIRE_EQUAL( next::get_cv_typename< const mine::an_increment_event* >( ), "const mine::an_increment_event*" );
+
+  BOOST_REQUIRE_EQUAL( next::get_cv_typename< mine::an_event* const>( ), "mine::an_event*const" );
+  BOOST_REQUIRE_EQUAL( next::get_cv_typename< mine::an_increment_event* const>( ), "mine::an_increment_event*const" );
+
+  BOOST_REQUIRE_EQUAL( next::get_cv_typename< const mine::an_event* const>( ), "const mine::an_event*const" );
+  BOOST_REQUIRE_EQUAL( next::get_cv_typename< const mine::an_increment_event* const>( ), "const mine::an_increment_event*const" );
+
+  BOOST_REQUIRE_EQUAL( next::get_cv_typename< mine::an_event** const>( ), "mine::an_event**const" );
+  BOOST_REQUIRE_EQUAL( next::get_cv_typename< mine::an_increment_event** const>( ), "mine::an_increment_event**const" );
 }
 
 // Unit test program
@@ -58,6 +86,7 @@ boost::unit_test_framework::test_suite *
     = BOOST_TEST_SUITE( "get_typename library test" );
 
   test->add( BOOST_TEST_CASE( get_typename_of_a_struct ) );
+  test->add( BOOST_TEST_CASE( get_cv_typename_of_a_struct ) );
 
 
   return test;

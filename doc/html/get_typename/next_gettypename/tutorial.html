@@ -34,18 +34,46 @@
 <p>
     </p>
 <a name="next_gettypename.tutorial.get_typename_from_a_struct_or_a_class_name"></a><h4>
-<a name="id1491675"></a>
+<a name="id1486416"></a>
       <a class="link" href="tutorial.html#next_gettypename.tutorial.get_typename_from_a_struct_or_a_class_name">Get
       typename from a struct or a class name</a>
     </h4>
 <p>
+      The type name retourned by <code class="computeroutput"><span class="identifier">get_typename</span><span class="special">()</span></code> does not include const and volatile qualifiers.
+    </p>
+<p>
       
 </p>
-<pre class="programlisting"><span class="keyword">struct</span> <span class="identifier">an_type</span>
+<pre class="programlisting"><span class="keyword">struct</span> <span class="identifier">a_type</span>
 <span class="special">{</span>
 <span class="special">};</span>
 
-<span class="identifier">BOOST_REQUIRE_EQUAL</span><span class="special">(</span> <span class="identifier">next</span><span class="special">::</span><span class="identifier">get_typename</span><span class="special">&lt;</span> <span class="identifier">an_type</span> <span class="special">&gt;(),</span> <span class="string">"an_type"</span> <span class="special">);</span>
+<span class="identifier">BOOST_REQUIRE_EQUAL</span><span class="special">(</span> <span class="identifier">next</span><span class="special">::</span><span class="identifier">get_typename</span><span class="special">&lt;</span> <span class="identifier">a_type</span> <span class="special">&gt;(),</span> <span class="string">"a_type"</span> <span class="special">);</span>
+<span class="identifier">BOOST_REQUIRE_EQUAL</span><span class="special">(</span> <span class="identifier">next</span><span class="special">::</span><span class="identifier">get_typename</span><span class="special">&lt;</span> <span class="keyword">const</span> <span class="identifier">a_type</span> <span class="special">&gt;(),</span> <span class="string">"a_type"</span> <span class="special">);</span>
+<span class="identifier">BOOST_REQUIRE_EQUAL</span><span class="special">(</span> <span class="identifier">next</span><span class="special">::</span><span class="identifier">get_typename</span><span class="special">&lt;</span> <span class="keyword">volatile</span> <span class="identifier">a_type</span> <span class="special">&gt;(),</span> <span class="string">"a_type"</span> <span class="special">);</span>
+<span class="identifier">BOOST_REQUIRE_EQUAL</span><span class="special">(</span> <span class="identifier">next</span><span class="special">::</span><span class="identifier">get_typename</span><span class="special">&lt;</span> <span class="keyword">const</span> <span class="keyword">volatile</span> <span class="identifier">a_type</span> <span class="special">&gt;(),</span> <span class="string">"a_type"</span> <span class="special">);</span>
+</pre>
+<p>
+    </p>
+<a name="next_gettypename.tutorial.get_qualified_typename_from_a_struct_or_a_class_name"></a><h4>
+<a name="id1486662"></a>
+      <a class="link" href="tutorial.html#next_gettypename.tutorial.get_qualified_typename_from_a_struct_or_a_class_name">Get
+      qualified typename from a struct or a class name</a>
+    </h4>
+<p>
+      The type name retourned by <code class="computeroutput"><span class="identifier">get_cv_typename</span><span class="special">()</span></code> does include const and volatile qualifiers.
+    </p>
+<p>
+      
+</p>
+<pre class="programlisting"><span class="keyword">struct</span> <span class="identifier">a_type</span>
+<span class="special">{</span>
+<span class="special">};</span>
+
+<span class="identifier">BOOST_REQUIRE_EQUAL</span><span class="special">(</span> <span class="identifier">next</span><span class="special">::</span><span class="identifier">get_typename</span><span class="special">&lt;</span> <span class="identifier">a_type</span> <span class="special">&gt;(),</span> <span class="string">"a_type"</span> <span class="special">);</span>
+<span class="identifier">BOOST_REQUIRE_EQUAL</span><span class="special">(</span> <span class="identifier">next</span><span class="special">::</span><span class="identifier">get_typename</span><span class="special">&lt;</span> <span class="keyword">const</span> <span class="identifier">a_type</span> <span class="special">&gt;(),</span> <span class="string">"const a_type"</span> <span class="special">);</span>
+<span class="identifier">BOOST_REQUIRE_EQUAL</span><span class="special">(</span> <span class="identifier">next</span><span class="special">::</span><span class="identifier">get_typename</span><span class="special">&lt;</span> <span class="keyword">volatile</span> <span class="identifier">a_type</span> <span class="special">&gt;(),</span> <span class="string">"volatile a_type"</span> <span class="special">);</span>
+<span class="identifier">BOOST_REQUIRE_EQUAL</span><span class="special">(</span> <span class="identifier">next</span><span class="special">::</span><span class="identifier">get_typename</span><span class="special">&lt;</span> <span class="keyword">const</span> <span class="keyword">volatile</span> <span class="identifier">a_type</span> <span class="special">&gt;(),</span> <span class="string">"const volatile a_type"</span> <span class="special">);</span>
 </pre>
 <p>
     </p>

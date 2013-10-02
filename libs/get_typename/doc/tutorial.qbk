@@ -19,6 +19,14 @@ Before each example, includes are :
 [tutorial_includes]
 [h3 Get typename from a struct or a class name]
 
+The type name retourned by [c++] `get_typename()` does not include const and volatile qualifiers.
+
 [tutorial_get_typename]
+
+[h3 Get qualified typename from a struct or a class name]
+
+The type name retourned by [c++] `get_cv_typename()` does include const and volatile qualifiers.
+
+[tutorial_get_cv_typename]
 
 [endsect]

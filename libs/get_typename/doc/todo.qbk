@@ -15,10 +15,8 @@ that should be implemented.
 
 [import ../example/todo.cpp]
 
-[h3 Have a get_typename and a get_cv_typename]
+[h3 Clean get_cv_typename code]
 
-get_typename should return the typename without const/volatile qualifier. The get_cv_typename would return the complete typename
-
-[todo_get_cv_typename]
+get_cv_typename code could be better...
 
 [endsect]
