@@ -135,7 +135,7 @@ void event_basic_send_message_with_result()
     std::end( result_list )
   );
 
-  BOOST_REQUIRE( result_list.size() == expected_result_list.size() );
+  BOOST_REQUIRE_EQUAL( result_list.size(), expected_result_list.size() );
   BOOST_REQUIRE( std::equal( std::begin( result_list ), std::end( result_list ), std::begin( expected_result_list ) ) );
 }
 
@@ -182,7 +182,7 @@ void multiple_handler_registered_on_event()
     );
   }
 
-  BOOST_REQUIRE( received_values.size() == wanted_values.size() );
+  BOOST_REQUIRE_EQUAL( received_values.size(), wanted_values.size() );
   BOOST_REQUIRE( std::equal( std::begin( received_values ), std::end( received_values ), std::begin( wanted_values ) ) );
 }
 
