@@ -1,0 +1,28 @@
+[/============================================================================
+  Next.Event
+
+  Copyright (c) 2013 Sylvain Oliver
+
+  Use, modification and distribution is subject to the Boost Software License,
+  Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
+  http://www.boost.org/LICENSE_1_0.txt)
+=============================================================================/]
+
+[section Todo]
+
+This todo section shows some of the features of __next_event__
+that should be implemented.
+
+[import ../example/todo.cpp]
+
+[h3 Get an handler when registering listeners]
+
+[todo_remove_listener]
+
+[h3 Rewrite sending event with std::bind and std::function]
+
+[h3 Add the possibility to give a source to event]
+
+[todo_send_source]
+
+[endsect]

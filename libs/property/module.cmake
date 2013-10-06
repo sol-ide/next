@@ -1,0 +1,1 @@
+next_module(property DEPENDS get_typename)
