@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <mutex>
+
 namespace next
 {
   template< typename T >
@@ -24,7 +26,7 @@ namespace next
     void set( const T& value );
 
     template< typename T >
-    const T& get() const;
+    T get() const;
 
     template< typename T >
     void listen( const std::function< void( const T& ) >& f );
@@ -37,6 +39,9 @@ namespace next
     virtual const void* untyped_get() const = 0;
     virtual void* untyped_get_backend() = 0;
     virtual void untyped_listen( const void* f ) = 0;
+
+  protected:
+    mutable std::mutex property_mutex_;
   };
 }
 

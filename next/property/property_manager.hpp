@@ -8,9 +8,12 @@
 
 #include <next/property/abstract_property.hpp>
 
+#include <boost/optional.hpp>
+
 #include <string>
 #include <unordered_map>
 #include <memory>
+#include <mutex>
 
 namespace next
 {
@@ -18,7 +21,7 @@ namespace next
   {
   public:
     template< typename Property >
-    typename Property::value_type property() const;
+    boost::optional< typename Property::value_type > property() const;
 
     template< typename Property >
     void property( const typename Property::value_type& value );
@@ -30,11 +33,12 @@ namespace next
     void listen( const std::function < void ( const typename Property::value_type& ) >& f );
 
     template< typename Property >
-    property_backend< Property >& get_property_backend() const;
+    boost::optional< property_backend< Property >& > get_property_backend() const;
 
   private:
     typedef std::unordered_map< std::string, std::unique_ptr< abstract_property > > property_list_type;
     property_list_type properties_;
+    mutable std::mutex properties_mutex_;
   };
 }
 

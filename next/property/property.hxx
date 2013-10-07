@@ -52,6 +52,7 @@ namespace next
   template< typename T >
   void property< T >::set_from_backend( const T& value )
   {
+    std::unique_lock< std::mutex > lock( property_mutex_ );
     value_ = value;
 
     std::for_each(

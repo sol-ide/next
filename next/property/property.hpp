@@ -41,7 +41,6 @@ namespace next
 
     typedef std::deque< std::function< void( const T& ) > > notify_list_type;
     notify_list_type notify_change_to_frontend_;
-
   };
 }
 

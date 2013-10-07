@@ -27,7 +27,9 @@ void test_property_set_and_get()
   next::properties_manager m;
 
   m.property< mine::size >( 10.2 );
-  BOOST_REQUIRE_EQUAL( m.property< mine::size >(), 10.2 );
+  boost::optional< mine::size::value_type > result = m.property< mine::size >();
+  BOOST_REQUIRE( !!result );
+  BOOST_REQUIRE_EQUAL( *result, 10.2 );
 }
 
 void test_property_existance()
@@ -42,10 +44,11 @@ void test_property_backend_callback()
 {
   next::properties_manager m;
   m.property< mine::size >( 0 );
-  next::property_backend< mine::size >& backend = m.get_property_backend< mine::size >( );
+  boost::optional< next::property_backend< mine::size >& > backend = m.get_property_backend< mine::size >( );
+  BOOST_REQUIRE( !!backend );
 
   boost::optional< mine::size::value_type > handled_value;
-  backend.listen< mine::size >(
+  backend->listen< mine::size >(
     [&]( mine::size::value_type value )
     {
       handled_value = value;
@@ -71,15 +74,18 @@ void test_property_callback()
       handled_value = value;
     }
   );
-  next::property_backend< mine::size >& backend = m.get_property_backend< mine::size >( );
+  boost::optional< next::property_backend< mine::size >& > backend = m.get_property_backend< mine::size >( );
+  BOOST_REQUIRE( !!backend );
 
   BOOST_REQUIRE( !handled_value );
-  backend.set( 10 );
+  backend->set( 10 );
   
   BOOST_REQUIRE( !!handled_value );
   BOOST_REQUIRE_EQUAL( *handled_value, 10 );
 
-  BOOST_REQUIRE_EQUAL( m.property< mine::size >(), 10 );
+  boost::optional< mine::size::value_type > result = m.property< mine::size >();
+  BOOST_REQUIRE( !!result );
+  BOOST_REQUIRE_EQUAL( *result, 10 );
 }
 
 // Unit test program
