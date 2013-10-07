@@ -15,18 +15,21 @@ namespace next
   template< typename T >
   void abstract_property::set( const T& value )
   {
+    std::unique_lock< std::mutex > lock( property_mutex_ );
     untyped_set( static_cast< const T* >( &value ) );
   }
 
   template< typename T >
-  const T& abstract_property::get() const
+  T abstract_property::get() const
   {
+    std::unique_lock< std::mutex > lock( property_mutex_ );
     return *static_cast< const T* >( untyped_get() );
   }
 
   template< typename T >
   void abstract_property::listen( const std::function< void( const T& ) >& f )
   {
+    std::unique_lock< std::mutex > lock( property_mutex_ );
     untyped_listen( &f );
   }
 
