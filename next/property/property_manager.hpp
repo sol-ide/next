@@ -9,7 +9,7 @@
 #include <next/property/abstract_property.hpp>
 
 #include <boost/optional.hpp>
-
+#include <boost/none_t.hpp>
 #include <string>
 #include <unordered_map>
 #include <memory>
@@ -17,6 +17,7 @@
 
 namespace next
 {
+  template< typename ConcreteManager = boost::none_t >
   class properties_manager
   {
   public:

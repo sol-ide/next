@@ -1,0 +1,48 @@
+[/============================================================================
+  Next.Event
+
+  Copyright (c) 2013 Sylvain Oliver
+
+  Use, modification and distribution is subject to the Boost Software License,
+  Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
+  http://www.boost.org/LICENSE_1_0.txt)
+=============================================================================/]
+
+[section Tutorial]
+
+[import ../example/tutorial.cpp]
+This tutorial section shows some of the features of __next_event__
+in the form of annotated, relatively simple, code snippets.
+
+Before each example, includes are :
+
+[tutorial_includes]
+[h3 Create the dispatcher]
+
+[tutorial_create_dispatcher]
+
+
+[h3 Declare an event]
+
+Each event has a signature. This signature specifie the return type and the type of the arguments
+You can declare an event with one integer parameter returning a bool as follow.
+
+[tutorial_declare_event]
+
+[h3 Listen an event]
+The event handler class can call a functor when an event is received. It is registered as follow
+
+[tutorial_listen_event]
+
+[h3 Send an event to dispatcher]
+When you send an send an event to the dispatcher, the return type is the futur of a boost::optional of the return type of the specified event
+
+[tutorial_send_an_event]
+
+When the event has been treated by the dispatcher, the future is notified. If the event has been handled by one listener, the optional stores the return value, else the optional is empty.
+
+[tutorial_send_many_events]
+
+If the event has no return type, the result is just a std::future< bool >. The boolean value depends if the event has been handled or not.
+
+[endsect]

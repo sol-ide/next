@@ -24,7 +24,7 @@ namespace mine
 
 void test_property_set_and_get()
 {
-  next::properties_manager m;
+  next::properties_manager<> m;
 
   m.property< mine::size >( 10.2 );
   boost::optional< mine::size::value_type > result = m.property< mine::size >();
@@ -34,7 +34,7 @@ void test_property_set_and_get()
 
 void test_property_existance()
 {
-  next::properties_manager m;
+  next::properties_manager<> m;
   BOOST_REQUIRE_EQUAL( m.has_property< mine::size >(), false );
   m.property< mine::size >( 0 );
   BOOST_REQUIRE_EQUAL( m.has_property< mine::size >( ), true );
@@ -42,7 +42,7 @@ void test_property_existance()
 
 void test_property_backend_callback()
 {
-  next::properties_manager m;
+  next::properties_manager<> m;
   m.property< mine::size >( 0 );
   boost::optional< next::property_backend< mine::size >& > backend = m.get_property_backend< mine::size >( );
   BOOST_REQUIRE( !!backend );
@@ -64,7 +64,7 @@ void test_property_backend_callback()
 
 void test_property_callback()
 {
-  next::properties_manager m;
+  next::properties_manager<> m;
   m.property< mine::size >( 0 );
 
   boost::optional< mine::size::value_type > handled_value;

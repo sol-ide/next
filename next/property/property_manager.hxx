@@ -11,8 +11,9 @@
 
 namespace next
 {
+  template< typename ConcreteManager >
   template< typename Property >
-  boost::optional< typename Property::value_type > properties_manager::property() const
+  boost::optional< typename Property::value_type > properties_manager< ConcreteManager >::property() const
   {
     const std::string& property_name = next::get_typename< Property >();
     boost::optional< typename Property::value_type > value;
@@ -26,8 +27,33 @@ namespace next
     return value;
   }
 
+  namespace details
+  {
+    template< typename ConcreteManager >
+    struct property_created
+    {
+      template< typename Property >
+      static void call( properties_manager< ConcreteManager >& self, abstract_property& abstract_p )
+      {
+        ConcreteManager& concrete_self = static_cast < ConcreteManager& >( self );
+        Property& p = static_cast< Property& >( abstract_p );
+        concrete_self.property_created( p );
+      }
+    };
+
+    template<>
+    struct property_created< boost::none_t >
+    {
+      template< typename Property >
+      static void call( properties_manager< boost::none_t >& self, abstract_property& abstract_p )
+      {
+      }
+    };
+  }
+
+  template< typename ConcreteManager >
   template< typename Property >
-  void properties_manager::property( const typename Property::value_type& value )
+  void properties_manager< ConcreteManager >::property( const typename Property::value_type& value )
   {
     const std::string& property_name = next::get_typename< Property >();
     std::unique_lock< std::mutex > lock( properties_mutex_ );
@@ -35,12 +61,14 @@ namespace next
     if( iter == properties_.end() )
     {
       std::tie( iter, std::ignore ) = properties_.emplace( property_name, std::make_unique< next::property< typename Property::value_type > >( value ) );
+      details::property_created< ConcreteManager >::call< Property >( *this, *( iter->second ) );
     }
     iter->second->set< typename Property::value_type >( value );
   }
 
+  template< typename ConcreteManager >
   template< typename Property >
-  bool properties_manager::has_property() const
+  bool properties_manager< ConcreteManager >::has_property() const
   {
     const std::string& property_name = next::get_typename< Property >();
     std::unique_lock< std::mutex > lock( properties_mutex_ );
@@ -48,8 +76,9 @@ namespace next
     return iter != properties_.end();
   }
 
+  template< typename ConcreteManager >
   template< typename Property >
-  boost::optional< property_backend< Property >& > properties_manager::get_property_backend() const
+  boost::optional< property_backend< Property >& > properties_manager< ConcreteManager >::get_property_backend() const
   {
     const std::string& property_name = next::get_typename< Property >( );
     boost::optional< property_backend< Property >& > backend;
@@ -63,8 +92,9 @@ namespace next
     return backend;
   }
 
+  template< typename ConcreteManager >
   template< typename Property >
-  void properties_manager::listen( const std::function < void ( const typename Property::value_type& ) >& f )
+  void properties_manager< ConcreteManager >::listen( const std::function < void ( const typename Property::value_type& ) >& f )
   {
     const std::string& property_name = next::get_typename< Property >( );
     std::unique_lock< std::mutex > lock( properties_mutex_ );

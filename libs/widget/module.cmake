@@ -1,0 +1,1 @@
+next_module(widget DEPENDS property event)
