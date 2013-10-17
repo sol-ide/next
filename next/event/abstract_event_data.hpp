@@ -7,6 +7,7 @@
 #pragma once
 
 #include "event_handler.hpp"
+#include <boost/optional.hpp>
 #include <boost/noncopyable.hpp>
 
 namespace next
@@ -26,7 +27,7 @@ namespace next
 
 		}
 
-		virtual void dispatch_message_to( event_handler& h ) = 0;
+    virtual void dispatch_message_to( boost::optional< event_handler >& from, event_handler& to ) = 0;
 
     virtual void get_future_result( void* value ) = 0;
   };

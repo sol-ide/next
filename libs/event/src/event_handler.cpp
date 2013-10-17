@@ -33,12 +33,17 @@ namespace next
     {
     }
 
-    void event_handler_impl::call( const std::string& event_name, void* untyped_parameters, void* untyped_promise )
+    void event_handler_impl::call( const std::string& event_name, void* from, void* to, void* untyped_parameters, void* untyped_promise )
     {
       auto iter_slot_owner = slots_.find( event_name );
       if( iter_slot_owner != std::end( slots_ ) )
       {
-        iter_slot_owner->second->call( untyped_parameters, untyped_promise );
+        iter_slot_owner->second->call(
+          *static_cast< boost::optional< next::event_handler >* >( from ),
+          *static_cast< next::event_handler* >( to ),
+          untyped_parameters,
+          untyped_promise
+        );
       }
     }
 
@@ -70,9 +75,9 @@ namespace next
     {
     }
 
-    void event_handler::call( const std::string& event_name, void* untyped_parameters, void* untyped_promise )
+    void event_handler::call( const std::string& event_name, boost::optional< event_handler >& from, event_handler& to, void* untyped_parameters, void* untyped_promise )
     {
-      handler_->call( event_name, untyped_parameters, untyped_promise );
+      handler_->call( event_name, &from, &to, untyped_parameters, untyped_promise );
     }
 
     std::weak_ptr< thread_group > event_handler::get_thread_group()

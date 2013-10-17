@@ -29,9 +29,9 @@ namespace next
     {
     }
 
-    virtual void dispatch_message_to( event_handler& h )
+    virtual void dispatch_message_to( boost::optional< event_handler >& from, event_handler& to )
     {
-      h.call( next::get_typename< Event >( ), &parameters_, &promise_ );
+      to.call( next::get_typename< Event >(), from, to, &parameters_, &promise_ );
     }
 
     virtual void get_future_result( void* value )

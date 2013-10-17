@@ -24,7 +24,8 @@ namespace next
     {
       typedef std::unique_ptr< next::abstract_event_data > event_data_type;
 
-      boost::optional< event_handler > handler;
+      boost::optional< event_handler > from;
+      boost::optional< event_handler > to;
       event_data_type                  event_data;
 
       thread_group_event_data()
@@ -32,15 +33,17 @@ namespace next
       {
       }
 
-      thread_group_event_data( event_handler& h, event_data_type&& data )
-        : handler( h )
+      thread_group_event_data( boost::optional< event_handler& > from_hanlder, event_handler& to_handler, event_data_type&& data )
+        : from( from_hanlder )
+        , to( to_handler)
         , event_data( std::move( data ) )
       {
       }
 
       void operator=( thread_group_event_data && other )
       {
-        std::swap( handler, other.handler );
+        std::swap( from, other.from );
+        std::swap( to, other.to );
         std::swap( event_data, other.event_data );
       }
 
@@ -57,10 +60,10 @@ namespace next
     {
     }
 
-    void store_event_data( event_handler& h, std::unique_ptr< next::abstract_event_data > event_data )
+    void store_event_data( boost::optional< event_handler& > from, event_handler& to, std::unique_ptr< next::abstract_event_data > event_data )
     {
       std::unique_lock< std::mutex > lock( event_data_mutex_ );
-      event_data_list_.emplace_back( h, std::move( event_data ) );
+      event_data_list_.emplace_back( from, to, std::move( event_data ) );
     }
 
     bool get_first_free_message( details::thread_group_event_data& free_message )

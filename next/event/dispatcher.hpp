@@ -59,6 +59,43 @@ namespace next
         };
     }
 
+    template< typename Event >
+    class send_event_from_t : boost::noncopyable
+    {
+    private:
+      typedef std::unique_ptr< next::abstract_event_data > abstract_event_data_ptr;
+
+      send_event_from_t();
+
+    public:
+      send_event_from_t( dispatcher& d, event_handler& from, abstract_event_data_ptr event_data_ptr )
+        : event_data_( std::move( event_data_ptr ) )
+        , d_( d )
+        , from_( from )
+      {
+      }
+
+      send_event_from_t( send_event_from_t && other )
+        : event_data_( std::move( other.event_data_ ) )
+        , d_( std::move( other.d_ ) )
+        , from_( std::move( other.from_ ) )
+      {
+      }
+
+      typename Event::future_type to( event_handler& h )
+      {
+        typename Event::future_type future;
+        event_data_->get_future_result( &future );
+        d_.send_event_impl( from_, h, std::move( event_data_ ) );
+        return std::move( future );
+      }
+
+    private:
+      abstract_event_data_ptr event_data_;
+      event_handler&          from_;
+      dispatcher&             d_;
+    };
+
   template< typename Event >
   class send_event_t : boost::noncopyable
   {
@@ -81,7 +118,18 @@ namespace next
     {
     }
 
-    typename Event::future_type to( event_handler& h );
+    send_event_from_t< Event > from( event_handler& h )
+    {
+      return send_event_from_t< Event >( d_, h, std::move( event_data_ ) );
+    }
+
+    typename Event::future_type to( event_handler& h )
+    {
+      typename Event::future_type future;
+      event_data_->get_future_result( &future );
+      d_.send_event_impl( boost::none, h, std::move( event_data_ ) );
+      return std::move( future );
+    }
 
   private:
     abstract_event_data_ptr event_data_;
@@ -144,7 +192,10 @@ namespace next
     template< typename Event >
     friend class send_event_t;
 
-    void send_event_impl( event_handler& h, std::unique_ptr< next::abstract_event_data > event_data );
+    template< typename Event >
+    friend class send_event_from_t;
+
+    void send_event_impl( boost::optional< event_handler& > from, event_handler& to, std::unique_ptr< next::abstract_event_data > event_data );
 
 
     friend class message_handling_thread;

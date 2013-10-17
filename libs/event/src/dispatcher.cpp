@@ -38,14 +38,14 @@ namespace next
     return thread_group_ptr;
   }
 
-  void dispatcher::send_event_impl( event_handler& h, std::unique_ptr< next::abstract_event_data > event_data )
+  void dispatcher::send_event_impl( boost::optional< event_handler& > from, event_handler& to, std::unique_ptr< next::abstract_event_data > event_data )
   {
     auto group_weak = h.get_thread_group();
     {
       std::unique_lock< std::mutex > lock( thread_group_mutex_ );
       {
         auto group_shared = group_weak.lock();
-        group_shared->store_event_data( h, std::move( event_data ) );
+        group_shared->store_event_data( from, to, std::move( event_data ) );
 
 
         auto iter = currently_dispatching_thread_groups_.find( group_shared.get() );

@@ -94,7 +94,7 @@ namespace next
         if( has_message_in_queue )
         {
           dispatcher_.move_waiting_to_dispatching_group_thread( currenlty_handled_group_.get() );
-          message.event_data->dispatch_message_to( *message.handler );
+          message.event_data->dispatch_message_to( message.from, *message.to );
           dispatcher_.remove_group_thread_from_currently_dispatching( currenlty_handled_group_.get() );
         }
         else

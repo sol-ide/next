@@ -30,8 +30,9 @@
 
 namespace next
 {
-    class dispatcher;
-    class thread_group;
+  class dispatcher;
+  class thread_group;
+  class event_handler;
 
 	namespace details
 	{
@@ -46,7 +47,7 @@ namespace next
     class NEXT_EVENT_EXPORT abstract_slot_owner
     {
     public:
-      virtual void call( void* untyped_parameters, void* untyped_promise ) = 0;
+      virtual void call( boost::optional< event_handler >& from, event_handler& to, void* untyped_parameters, void* untyped_promise ) = 0;
       virtual void insert( std::unique_ptr< abstract_slot > slot ) = 0;
     };
 
@@ -54,10 +55,10 @@ namespace next
     struct call_agregate_result_helper
     {
       template< typename Aggregator >
-      static void aggregate( Aggregator && aggregator, std::unique_ptr< abstract_slot >& slot, void* untyped_parameters )
+      static void aggregate( Aggregator && aggregator, std::unique_ptr< abstract_slot >& slot, boost::optional< event_handler >& from, event_handler& to, void* untyped_parameters )
       {
         ReturnType result;
-        slot->call( untyped_parameters, &result );
+        slot->call( from, to, untyped_parameters, &result );
         aggregator( result );
       }
     };
@@ -66,9 +67,9 @@ namespace next
     struct call_agregate_result_helper< void >
     {
       template< typename Aggregator >
-      static void aggregate( Aggregator && aggregator, std::unique_ptr< abstract_slot >& slot, void* untyped_parameters )
+      static void aggregate( Aggregator && aggregator, std::unique_ptr< abstract_slot >& slot, boost::optional< event_handler >& from, event_handler& to, void* untyped_parameters )
       {
-        slot->call( untyped_parameters, nullptr );
+        slot->call( from, to, untyped_parameters, nullptr );
         aggregator( true );
       }
     };
@@ -77,15 +78,15 @@ namespace next
     class slot_owner : public abstract_slot_owner
     {
     public:
-      virtual void call( void* untyped_parameters, void* untyped_promise )
+      virtual void call( boost::optional < event_handler >& from, event_handler& to, void* untyped_parameters, void* untyped_promise )
       {
         Aggregator aggregator;
         std::for_each(
           std::begin( slots_ ),
           std::end( slots_ ),
-          [ &aggregator, untyped_parameters ]( std::unique_ptr< abstract_slot >& slot )
+          [ &aggregator, untyped_parameters, &from, &to ]( std::unique_ptr< abstract_slot >& slot )
           {
-            call_agregate_result_helper< typename Event::return_type >::template aggregate( aggregator, slot, untyped_parameters );
+            call_agregate_result_helper< typename Event::return_type >::template aggregate( aggregator, slot, from, to, untyped_parameters );
           }
         );
         typedef typename Event::promise_type decorated_promise;
@@ -102,6 +103,9 @@ namespace next
       std::deque< std::unique_ptr< abstract_slot > > slots_;
     };
 
+
+      virtual void call( boost::optional < event_handler >& from, event_handler& to, void* untyped_parameters, void* untyped_result ) = 0;
+		};
 
 		template< typename Event, typename F >
 		class slot : public abstract_slot
@@ -127,7 +131,7 @@ namespace next
         boost::fusion::invoke( f_, parameters );
       }
 
-			virtual void call( void* untyped_parameters, void* untyped_result )
+      virtual void call( boost::optional< event_handler >& from, event_handler& to, void* untyped_parameters, void* untyped_result )
 			{
         typename Event::parameter_types* parameters = static_cast< typename Event::parameter_types* >( untyped_parameters );
         typename Event::return_type* result = static_cast< typename Event::return_type* >( untyped_result );
@@ -156,57 +160,65 @@ namespace next
     template< typename Event, typename F >
     void listen( F&& f );
 
-    void call( const std::string& event_name, void* untyped_parameters, void* untyped_promise );
+    void call( const std::string& event_name, void* from, void* to, void* untyped_parameters, void* untyped_promise );
 
     std::weak_ptr< thread_group > get_thread_group();
 
   private:
     event_handler_impl( const event_handler_impl& other );
 
+    template< typename Event >
+    void listen_impl( std::unique_ptr< details::abstract_slot > slot );
+
 	private:
     slots_map                     slots_;
     std::weak_ptr< thread_group > group_;
 	};
 
+  template< typename Event, typename F >
+  void event_handler_impl::listen( F && f )
+  {
+    listen_impl< Event >( std::make_unique< details::slot< Event, F > >( std::forward< F >( f ) ) );
+  }
+
+  template< typename Event >
+  void event_handler_impl::listen_impl( std::unique_ptr< details::abstract_slot > slot )
+  {
+    typedef typename Event::return_type return_type;
+    typedef typename Event::aggregator_type aggregator_type;
+
+    const std::string& event_name = next::get_typename< Event >( );
+    auto iter_slot = slots_.find( event_name );
+    if( iter_slot == slots_.end() )
+    {
+      bool has_been_inserted = false;
+      std::tie( iter_slot, has_been_inserted ) = slots_.emplace(
+        event_name,
+        std::make_unique< details::slot_owner< Event, aggregator_type > >( )
+      );
+
+    }
+    iter_slot->second->insert( std::move( slot ) );
+  }
+
+  class NEXT_EVENT_EXPORT event_handler
+  {
+  public:
+    event_handler( next::dispatcher& d );
+    event_handler( const event_handler& other );
+    event_handler( event_handler&& other );
+        
+    ~event_handler();
 
     template< typename Event, typename F >
-    void event_handler_impl::listen( F && f )
+    void listen( F&& f )
     {
-      typedef typename Event::return_type return_type;
-      typedef typename Event::aggregator_type aggregator_type;
-
-      const std::string& event_name = next::get_typename< Event >( );
-      auto iter_slot = slots_.find( event_name );
-      if( iter_slot == slots_.end() )
-      {
-        bool has_been_inserted = false;
-        std::tie( iter_slot, has_been_inserted ) = slots_.emplace(
-          event_name,
-          std::make_unique< details::slot_owner< Event, aggregator_type > >( )
-        );
-
-      }
-      iter_slot->second->insert( std::make_unique< details::slot< Event, F > >( std::forward< F >( f ) ) );
+      handler_->template listen< Event, F >( std::forward< F >( f ) );
     }
 
-    class NEXT_EVENT_EXPORT event_handler
-    {
-    public:
-        event_handler( next::dispatcher& d );
-        event_handler( const event_handler& other );
-        event_handler( event_handler&& other );
-        
-        ~event_handler();
+    void call( const std::string& event_name, boost::optional< event_handler >& from, event_handler& to, void* untyped_parameters, void* untyped_promise );
 
-        template< typename Event, typename F >
-        void listen( F&& f )
-        {
-          handler_->template listen< Event, F >( std::forward< F >( f ) );
-        }
-
-        void call( const std::string& event_name, void* untyped_parameters, void* untyped_promise );
-
-        std::weak_ptr< thread_group > get_thread_group();
+    std::weak_ptr< thread_group > get_thread_group();
 
 
         event_handler& operator=( const event_handler& other ) = default;
