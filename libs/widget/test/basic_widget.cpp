@@ -8,8 +8,10 @@
 
 #include <boost/test/unit_test.hpp> // for main, BOOST_CHECK, etc.
 
-#include <next/event/dispatcher.hpp>
+#include <next/widget/dispatcher.hpp>
 #include <next/widget/widget.hpp>
+
+#include <boost/thread/barrier.hpp>
 
 namespace mine
 {
@@ -20,13 +22,18 @@ namespace mine
   struct an_event : public next::event < void( double ) >
   {
   };
+
+  struct a_signal : public next::event < void() >
+  {
+  };
+
 }
 
 void test_property_set_from_backend()
 {
   boost::optional< double > received_value;
   {
-    next::dispatcher d{ next::thread_pool_size_t{ 4 } };
+    next::widgets::dispatcher d{ next::thread_pool_size_t{ 4 } };
     next::widgets::widget w{ d };
 
     w.listen< mine::size::change >(
@@ -52,10 +59,11 @@ void test_send_event()
 {
   boost::optional< double > received_value;
   {
-    next::dispatcher d{ next::thread_pool_size_t{ 4 } };
-    next::widgets::widget w{ d };
+    next::widgets::dispatcher d{ next::thread_pool_size_t{ 4 } };
+    next::widgets::widget source{ d };
+    next::widgets::widget dest{ d };
 
-    w.listen< mine::an_event >(
+    dest.listen< mine::an_event >(
       [ &received_value ]( const double& value )
       {
         received_value = value;
@@ -63,7 +71,7 @@ void test_send_event()
     );
 
     BOOST_REQUIRE( !received_value );
-    d.send_event< mine::an_event >( 3.1415 ).to( w );
+    d.send_event< mine::an_event >( 3.1415 ).from( source ).to( dest );
   }
   BOOST_REQUIRE( !!received_value );
   BOOST_REQUIRE_EQUAL( *received_value, 3.1415 );
@@ -72,30 +80,35 @@ void test_send_event()
 void test_bind_event_with_property()
 {
   {
-    next::dispatcher d{ next::thread_pool_size_t{ 4 } };
+    next::widgets::dispatcher d{ next::thread_pool_size_t{ 4 } };
     next::widgets::widget w_source{ d };
     next::widgets::widget w_target{ d };
 
-    w.bind< mine::an_event >(
-      []( next::widgets::target::property< mine::size >& target_property, next::widget::source::property< mine::size >& source_property )
+    boost::barrier b{ 2 };
+
+    w_target.bind< mine::a_signal >(
+      [&]( next::widgets::target::property< mine::size >& target_property, next::widgets::source::property< mine::size >& source_property )
       {
-        target_property( source_property() );
+        target_property( *source_property() );
+        b.wait();
       }
     );
 
     w_source.property< mine::size >( 3.1415 );
-    
+
     BOOST_REQUIRE_EQUAL( w_source.has_property< mine::size >(), true );
     BOOST_REQUIRE_EQUAL( w_target.has_property< mine::size >(), false );
     BOOST_REQUIRE_EQUAL( w_target.property< mine::size >(), 3.1415 );
 
-    d.send_event< mine::an_event >( 42. ).from( w_source ).to( w_target );
-  }
-  BOOST_REQUIRE_EQUAL( w_source.has_property< mine::size >(), true );
-  BOOST_REQUIRE_EQUAL( w_target.has_property< mine::size >(), true );
+    d.send_event< mine::a_signal >().from( w_source ).to( w_target );
+    b.wait();
 
-  BOOST_REQUIRE_EQUAL( w_source.property< mine::size >(), 3.1415 );
-  BOOST_REQUIRE_EQUAL( w_target.property< mine::size >(), 3.1415 );
+    BOOST_REQUIRE_EQUAL( w_source.has_property< mine::size >(), true );
+    BOOST_REQUIRE_EQUAL( w_target.has_property< mine::size >(), true );
+
+    BOOST_REQUIRE_EQUAL( w_source.property< mine::size >(), 3.1415 );
+    BOOST_REQUIRE_EQUAL( w_target.property< mine::size >(), 3.1415 );
+  }
 }
 
 // Unit test program

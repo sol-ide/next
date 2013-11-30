@@ -157,8 +157,8 @@ namespace next
 
     ~event_handler_impl();
 
-    template< typename Event, typename F >
-    void listen( F&& f );
+    template< typename Event >
+    void listen( std::unique_ptr< details::abstract_slot > slot );
 
     void call( const std::string& event_name, void* from, void* to, void* untyped_parameters, void* untyped_promise );
 
@@ -167,22 +167,13 @@ namespace next
   private:
     event_handler_impl( const event_handler_impl& other );
 
-    template< typename Event >
-    void listen_impl( std::unique_ptr< details::abstract_slot > slot );
-
 	private:
     slots_map                     slots_;
     std::weak_ptr< thread_group > group_;
 	};
 
-  template< typename Event, typename F >
-  void event_handler_impl::listen( F && f )
-  {
-    listen_impl< Event >( std::make_unique< details::slot< Event, F > >( std::forward< F >( f ) ) );
-  }
-
   template< typename Event >
-  void event_handler_impl::listen_impl( std::unique_ptr< details::abstract_slot > slot )
+  void event_handler_impl::listen( std::unique_ptr< details::abstract_slot > slot )
   {
     typedef typename Event::return_type return_type;
     typedef typename Event::aggregator_type aggregator_type;
@@ -208,12 +199,12 @@ namespace next
     event_handler( const event_handler& other );
     event_handler( event_handler&& other );
         
-    ~event_handler();
+    virtual ~event_handler();
 
     template< typename Event, typename F >
     void listen( F&& f )
     {
-      handler_->template listen< Event, F >( std::forward< F >( f ) );
+      handler_->template listen< Event >( std::make_unique< details::slot< Event, F > >( std::forward< F >( f ) ) );
     }
 
     void call( const std::string& event_name, boost::optional< event_handler >& from, event_handler& to, void* untyped_parameters, void* untyped_promise );

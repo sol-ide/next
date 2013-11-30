@@ -138,7 +138,33 @@ namespace next
 
   struct thread_pool_size_t
   {
-    std::size_t pool_size;
+    typedef std::size_t type;
+    type value;
+  };
+
+  template < typename Arguments, typename Parameter, bool ParameterIsInArguments >
+  struct initialize_thread_pool_size_from_argument_impl;
+
+  template < typename Arguments, typename Parameter >
+  struct initialize_thread_pool_size_from_argument_impl< Arguments, Parameter, true >
+  {
+  };
+
+  template < typename Arguments, typename Parameter >
+  struct initialize_thread_pool_size_from_argument_impl< Arguments, Parameter, false >
+  {
+    static void initialize( typename Parameter::type& /* value */ )
+    {
+    }
+  };
+
+  template < typename Arguments, typename Parameter >
+  struct initialize_thread_pool_size_from_argument : initialize_thread_pool_size_from_argument_impl < Arguments, Parameter, boost::fusion::result_of::has_key< Arguments, Parameter >::value >
+  {
+    static void initialize( typename Parameter::type& value )
+    {
+      value = boost::fusion::at_key< thread_pool_size_t >( arguments ).value;
+    }
   };
 
   class NEXT_EVENT_EXPORT dispatcher : boost::noncopyable
@@ -160,11 +186,7 @@ namespace next
 #endif
 
       std::size_t pool_size = 1;
-
-      if( boost::fusion::result_of::has_key< Arguments, thread_pool_size_t >::value )
-      {
-        pool_size = boost::fusion::at_key< thread_pool_size_t >( arguments ).pool_size;
-      }
+      initialize_thread_pool_size_from_argument< Arguments, thread_pool_size_t >::initialize( pool_size );
 
       for( std::size_t index = 0; index < pool_size; ++index )
       {
@@ -187,15 +209,15 @@ namespace next
 
     std::weak_ptr< thread_group > create_thread_group();
 
-  private:
+  protected:
+    void send_event_impl( boost::optional< event_handler& > from, event_handler& to, std::unique_ptr< next::abstract_event_data > event_data );
 
+  private:
     template< typename Event >
     friend class send_event_t;
 
     template< typename Event >
     friend class send_event_from_t;
-
-    void send_event_impl( boost::optional< event_handler& > from, event_handler& to, std::unique_ptr< next::abstract_event_data > event_data );
 
 
     friend class message_handling_thread;
