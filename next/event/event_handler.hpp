@@ -8,8 +8,10 @@
 
 #define BOOST_RESULT_OF_USE_DECLTYPE
 
+#include <next/get_typename/get_typename.hpp>
 #include <next/event/config.hpp>
 #include <next/event/event.hpp>
+#include <next/cpp/make_unique.hpp>
 
 #include <boost/fusion/functional/invocation/invoke.hpp>
 #include <boost/optional.hpp>
@@ -21,9 +23,10 @@
 #include <algorithm>
 #include <future>
 
-
-#pragma warning(push)
-#pragma warning(disable:4251)
+#ifdef _MSC_VER
+# pragma warning(push)
+# pragma warning(disable:4251)
+#endif
 
 namespace next
 {
@@ -32,7 +35,13 @@ namespace next
 
 	namespace details
 	{
-    class abstract_slot;
+    class NEXT_EVENT_EXPORT abstract_slot
+		{
+		public:
+      virtual ~abstract_slot();
+
+      virtual void call( void* untyped_parameters, void* untyped_result ) = 0;
+		};
 
     class NEXT_EVENT_EXPORT abstract_slot_owner
     {
@@ -93,13 +102,6 @@ namespace next
       std::deque< std::unique_ptr< abstract_slot > > slots_;
     };
 
-    class NEXT_EVENT_EXPORT abstract_slot
-		{
-		public:
-      virtual ~abstract_slot();
-
-      virtual void call( void* untyped_parameters, void* untyped_result ) = 0;
-		};
 
 		template< typename Event, typename F >
 		class slot : public abstract_slot
@@ -119,7 +121,7 @@ namespace next
         *result = boost::fusion::invoke( f_, parameters );
       }
 
-      template< typename typename ParametersType >
+      template< typename ParametersType >
       void select_call( ParametersType& parameters, void* result )
       {
         boost::fusion::invoke( f_, parameters );
@@ -206,9 +208,13 @@ namespace next
 
         std::weak_ptr< thread_group > get_thread_group();
 
+
+        event_handler& operator=( const event_handler& other ) = default;
     private:
         std::shared_ptr< event_handler_impl > handler_;
     };
 }
 
-#pragma warning(pop)
+#ifdef _MSC_VER
+# pragma warning(pop)
+#endif

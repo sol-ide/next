@@ -24,9 +24,11 @@
 #include <unordered_set>
 #include <future>
 
-#pragma warning(push)
-#pragma warning(disable:4251)
-#pragma warning(disable:4275)
+#ifdef _MSC_VER
+# pragma warning(push)
+# pragma warning(disable:4251)
+# pragma warning(disable:4275)
+#endif
 
 namespace next
 {
@@ -38,7 +40,7 @@ namespace next
         template< typename T >
         struct hash_weak
         {
-            std::size_t operator( )( std::weak_ptr< T > w )
+            std::size_t operator( )( std::weak_ptr< T >& w )
             {
                 auto ptr = w.lock();
                 return std::hash< decltype( ptr ) >()( ptr );
@@ -48,7 +50,7 @@ namespace next
         template< typename T >
         struct equal_to_weak
         {
-            bool operator( )( std::weak_ptr< T > w1, std::weak_ptr< T > w2 )
+            bool operator( )( std::weak_ptr< T >& w1, std::weak_ptr< T >& w2 )
             {
                 auto ptr1 = w1.lock();
                 auto ptr2 = w2.lock();
@@ -75,17 +77,11 @@ namespace next
 
     send_event_t( send_event_t && other )
       : event_data_( std::move( other.event_data_ ) )
-      , d_( std::move( other.d_ ) )
+      , d_( other.d_ )
     {
     }
 
-    typename Event::future_type to( event_handler& h )
-    {
-      typename Event::future_type future;
-      event_data_->get_future_result( &future );
-      d_.send_event_impl( h, std::move( event_data_ ) );
-      return std::move( future );
-    }
+    typename Event::future_type to( event_handler& h );
 
   private:
     abstract_event_data_ptr event_data_;
@@ -189,6 +185,17 @@ namespace next
     bool                                    is_being_deleted_;
     mutable std::mutex                      begin_deleted_mutex_;
   };
+
+  template< typename Event >
+  typename Event::future_type send_event_t< Event >::to( event_handler& h )
+  {
+    typename Event::future_type future;
+    event_data_->get_future_result( &future );
+    d_.send_event_impl( h, std::move( event_data_ ) );
+    return std::move( future );
+  }
 }
 
-#pragma warning(pop)
+#ifdef _MSC_VER
+# pragma warning(pop)
+#endif

@@ -11,8 +11,10 @@
 #include <boost/optional.hpp>
 #include <mutex>
 
-#pragma warning(push)
-#pragma warning(disable:4251)
+#ifdef _MSC_VER
+# pragma warning(push)
+# pragma warning(disable:4251)
+#endif
 
 namespace next
 {
@@ -87,4 +89,6 @@ namespace next
   };
 }
 
-#pragma warning(push)
+#ifdef _MSC_VER
+# pragma warning(push)
+#endif

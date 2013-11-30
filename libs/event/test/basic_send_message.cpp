@@ -12,11 +12,14 @@
 #include <next/event/dispatcher.hpp>
 #include <next/event/event_handler.hpp>
 #include <next/event/event.hpp>
+#include <next/cpp/make_unique.hpp>
 #include <thread>
 
 #include <iostream>
 
-#include <intrin.h>
+#ifdef _MSC_VER
+# include <intrin.h>
+#endif
 
 namespace mine
 {
@@ -153,7 +156,7 @@ void multiple_handler_registered_on_event()
     {
       for( int handler_index = 0; handler_index < number_of_handler; ++handler_index )
       {
-        wanted_values.emplace( value, handler_index );
+        wanted_values.insert( std::make_pair( value, handler_index ) );
       }
     }
   );
@@ -167,7 +170,7 @@ void multiple_handler_registered_on_event()
       h.listen< mine::an_event >(
         [ &received_values, handler_index ]( int value )
         {
-          received_values.emplace( value, handler_index );
+          received_values.insert( std::make_pair( value, handler_index ) );
         }
       );
     }

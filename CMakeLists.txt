@@ -158,9 +158,11 @@ install(DIRECTORY next
   PATTERN "CVS" EXCLUDE
   PATTERN ".svn" EXCLUDE)
 
-set(Boost_USE_STATIC_LIBS ON)
+#set(Boost_DEBUG 1)
+set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTI_THREADED ON)
-find_package( Boost 1.49.0 REQUIRED unit_test_framework )
+#find_package( Boost REQUIRED unit_test_framework )
+find_package( Boost REQUIRED test_exec_monitor system )
 set(CMAKE_VERBOSE_MAKEFILE true)
 
 if (${CMAKE_CXX_COMPILER_ID} MATCHES GNU)
@@ -287,6 +289,16 @@ if (NOT NEXT_EXPORTS_INSTALL_DIR)
 endif()
 
 mark_as_advanced(NEXT_EXPORTS_FILE)
+
+if( CMAKE_CXX_COMPILER MATCHES ".*clang" )
+  set( CMAKE_COMPILER_IS_CLANGXX 1 )
+endif()
+
+if( CMAKE_COMPILER_IS_GNUCXX )
+  add_definitions(-std=c++0x)
+elseif( CMAKE_COMPILER_IS_CLANGXX )
+  add_definitions(-std=c++1y)
+endif( CMAKE_COMPILER_IS_GNUCXX )
 
 # Add build rules for documentation
 add_subdirectory(doc)

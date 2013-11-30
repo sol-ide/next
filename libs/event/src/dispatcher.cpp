@@ -32,7 +32,6 @@ namespace next
   {
     using namespace std::placeholders;
 
-    // auto thread_group_ptr = std::shared_ptr< thread_group >( new thread_group(), std::bind( &dispatcher::remove_thread_group_and_delete, this, _1 ) );
     auto thread_group_ptr = std::make_shared< thread_group >( );
     std::unique_lock< std::mutex > lock( thread_group_mutex_ );
     thread_groups_.insert( thread_group_ptr );
@@ -41,22 +40,22 @@ namespace next
 
   void dispatcher::send_event_impl( event_handler& h, std::unique_ptr< next::abstract_event_data > event_data )
   {
-    auto& group = h.get_thread_group();
+    auto group_weak = h.get_thread_group();
     {
       std::unique_lock< std::mutex > lock( thread_group_mutex_ );
       {
-        auto group_lock = group.lock();
-        group_lock->store_event_data( h, std::move( event_data ) );
+        auto group_shared = group_weak.lock();
+        group_shared->store_event_data( h, std::move( event_data ) );
 
 
-        auto iter = currently_dispatching_thread_groups_.find( group_lock.get() );
+        auto iter = currently_dispatching_thread_groups_.find( group_shared.get() );
         if( iter != currently_dispatching_thread_groups_.end() )
         {
           // an event is already dispatched in this thread group... do nothing
         }
         else
         {
-          auto insert_result = waiting_for_dispatch_thread_groups_.insert( group_lock.get() );
+          auto insert_result = waiting_for_dispatch_thread_groups_.insert( group_shared.get() );
 
           if( insert_result.second == true )
           {
@@ -73,12 +72,12 @@ namespace next
                 auto iter_running_thread = running_threads_.insert( std::move( *iter_waiting_thread ) );
                 waiting_threads_.erase( iter_waiting_thread );
                 auto& message_handling_thread_ptr = *iter_running_thread.first;
-                message_handling_thread_ptr->wake_up_thread( group_lock );
+                message_handling_thread_ptr->wake_up_thread( group_shared );
               }
             }
             else
             {
-              waiting_for_thread_thread_groups_.insert( group_lock );
+              waiting_for_thread_thread_groups_.insert( group_shared );
             }
           }
           else
