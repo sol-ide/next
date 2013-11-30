@@ -297,7 +297,7 @@ endif()
 if( CMAKE_COMPILER_IS_GNUCXX )
   add_definitions(-std=c++0x)
 elseif( CMAKE_COMPILER_IS_CLANGXX )
-  add_definitions(-std=c++1y)
+  add_definitions(-std=c++11)
 endif( CMAKE_COMPILER_IS_GNUCXX )
 
 # Add build rules for documentation

@@ -13,3 +13,9 @@
 #else
 # define NEXT_GET_TYPENAME_EXPORT
 #endif
+
+#ifdef __GNUC__
+#  ifdef __clang__
+extern "C" char* gets (char* __s) __attribute__((deprecated));
+#  endif
+#endif
