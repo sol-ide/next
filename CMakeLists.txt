@@ -161,8 +161,14 @@ install(DIRECTORY next
 #set(Boost_DEBUG 1)
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTI_THREADED ON)
-#find_package( Boost REQUIRED unit_test_framework )
-find_package( Boost REQUIRED test_exec_monitor system )
+
+# I use the boost trunk on win32...
+if(WIN32)
+  find_package( Boost REQUIRED unit_test_framework )
+else(WIN32)
+  find_package( Boost REQUIRED test_exec_monitor system )
+endif(WIN32)
+
 set(CMAKE_VERBOSE_MAKEFILE true)
 
 if (${CMAKE_CXX_COMPILER_ID} MATCHES GNU)

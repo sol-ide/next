@@ -41,7 +41,7 @@ namespace next
 		public:
       virtual ~abstract_slot();
 
-      virtual void call( void* untyped_parameters, void* untyped_result ) = 0;
+      virtual void call( boost::optional< event_handler >& from, event_handler& to, void* untyped_parameters, void* untyped_result ) = 0;
 		};
 
     class NEXT_EVENT_EXPORT abstract_slot_owner
@@ -102,10 +102,6 @@ namespace next
     private:
       std::deque< std::unique_ptr< abstract_slot > > slots_;
     };
-
-
-      virtual void call( boost::optional < event_handler >& from, event_handler& to, void* untyped_parameters, void* untyped_result ) = 0;
-		};
 
 		template< typename Event, typename F >
 		class slot : public abstract_slot
@@ -211,11 +207,9 @@ namespace next
 
     std::weak_ptr< thread_group > get_thread_group();
 
-
-        event_handler& operator=( const event_handler& other ) = default;
-    private:
-        std::shared_ptr< event_handler_impl > handler_;
-    };
+  protected:
+    std::shared_ptr< event_handler_impl > handler_;
+  };
 }
 
 #ifdef _MSC_VER

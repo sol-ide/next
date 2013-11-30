@@ -148,12 +148,16 @@ namespace next
   template < typename Arguments, typename Parameter >
   struct initialize_thread_pool_size_from_argument_impl< Arguments, Parameter, true >
   {
+    static void initialize( const Arguments& arguments, typename Parameter::type& value )
+    {
+      value = boost::fusion::at_key< thread_pool_size_t >( arguments ).value;
+    }
   };
 
   template < typename Arguments, typename Parameter >
   struct initialize_thread_pool_size_from_argument_impl< Arguments, Parameter, false >
   {
-    static void initialize( typename Parameter::type& /* value */ )
+    static void initialize( const Arguments& arguments, typename Parameter::type& /* value */ )
     {
     }
   };
@@ -161,10 +165,7 @@ namespace next
   template < typename Arguments, typename Parameter >
   struct initialize_thread_pool_size_from_argument : initialize_thread_pool_size_from_argument_impl < Arguments, Parameter, boost::fusion::result_of::has_key< Arguments, Parameter >::value >
   {
-    static void initialize( typename Parameter::type& value )
-    {
-      value = boost::fusion::at_key< thread_pool_size_t >( arguments ).value;
-    }
+
   };
 
   class NEXT_EVENT_EXPORT dispatcher : boost::noncopyable
@@ -186,7 +187,7 @@ namespace next
 #endif
 
       std::size_t pool_size = 1;
-      initialize_thread_pool_size_from_argument< Arguments, thread_pool_size_t >::initialize( pool_size );
+      initialize_thread_pool_size_from_argument< Arguments, thread_pool_size_t >::initialize( arguments, pool_size );
 
       for( std::size_t index = 0; index < pool_size; ++index )
       {
@@ -258,15 +259,6 @@ namespace next
     bool                                    is_being_deleted_;
     mutable std::mutex                      begin_deleted_mutex_;
   };
-
-  template< typename Event >
-  typename Event::future_type send_event_t< Event >::to( event_handler& h )
-  {
-    typename Event::future_type future;
-    event_data_->get_future_result( &future );
-    d_.send_event_impl( h, std::move( event_data_ ) );
-    return std::move( future );
-  }
 }
 
 #ifdef _MSC_VER
