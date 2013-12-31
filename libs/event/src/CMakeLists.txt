@@ -6,7 +6,6 @@
 set (COMPILING_NEXT_EVENT)
 
 next_add_library (event
-  dispatcher.cpp
   event_handler.cpp
   message_handling_thread.cpp
 

@@ -8,12 +8,13 @@
 
 #include <next/property/abstract_property.hpp>
 #include <next/get_typename/get_typename.hpp>
+#include <next/cpp/make_unique.hpp>
 
 namespace next
 {
   template< typename ConcreteManager >
   template< typename Property >
-  boost::optional< typename Property::value_type > properties_manager< ConcreteManager >::property() const
+  boost::optional< typename Property::value_type > properties_manager_impl< ConcreteManager >::property() const
   {
     const std::string& property_name = next::get_typename< Property >();
     boost::optional< typename Property::value_type > value;
@@ -21,7 +22,7 @@ namespace next
     auto iter = properties_.find( property_name );
     if( iter != properties_.end() )
     {
-      value = iter->second->get< typename Property::value_type >();
+      value = iter->second->template get< typename Property::value_type >();
     }
 
     return value;
@@ -33,7 +34,7 @@ namespace next
     struct property_created
     {
       template< typename Property >
-      static void call( properties_manager< ConcreteManager >& self, abstract_property& abstract_p )
+      static void call( ConcreteManager& self, abstract_property& abstract_p )
       {
         ConcreteManager& concrete_self = static_cast < ConcreteManager& >( self );
         Property& p = static_cast< Property& >( abstract_p );
@@ -45,30 +46,31 @@ namespace next
     struct property_created< boost::none_t >
     {
       template< typename Property >
-      static void call( properties_manager< boost::none_t >& self, abstract_property& abstract_p )
+      static void call( boost::none_t& self, abstract_property& abstract_p )
       {
       }
     };
   }
 
   template< typename ConcreteManager >
-  template< typename Property >
-  void properties_manager< ConcreteManager >::property( const typename Property::value_type& value )
+  template< typename Property, typename Manager >
+  void properties_manager_impl< ConcreteManager >::property( const typename Property::value_type& value, Manager&& self )
   {
+    static_assert( std::is_same< typename std::remove_reference< Manager >::type, ConcreteManager >::value, "internal error: ConcreteManager and Mnager should be the same type" );
     const std::string& property_name = next::get_typename< Property >();
     std::unique_lock< std::mutex > lock( properties_mutex_ );
     property_list_type::iterator iter = properties_.find( property_name );
     if( iter == properties_.end() )
     {
       std::tie( iter, std::ignore ) = properties_.emplace( property_name, std::make_unique< next::property< typename Property::value_type > >( value ) );
-      details::property_created< ConcreteManager >::call< Property >( *this, *( iter->second ) );
+      details::property_created< ConcreteManager >::template call< Property >( self, *( iter->second ) );
     }
-    iter->second->set< typename Property::value_type >( value );
+    iter->second->template set< typename Property::value_type >( value );
   }
 
   template< typename ConcreteManager >
   template< typename Property >
-  bool properties_manager< ConcreteManager >::has_property() const
+  bool properties_manager_impl< ConcreteManager >::has_property() const
   {
     const std::string& property_name = next::get_typename< Property >();
     std::unique_lock< std::mutex > lock( properties_mutex_ );
@@ -78,7 +80,7 @@ namespace next
 
   template< typename ConcreteManager >
   template< typename Property >
-  boost::optional< property_backend< Property >& > properties_manager< ConcreteManager >::get_property_backend() const
+  boost::optional< property_backend< Property >& > properties_manager_impl< ConcreteManager >::get_property_backend() const
   {
     const std::string& property_name = next::get_typename< Property >( );
     boost::optional< property_backend< Property >& > backend;
@@ -86,7 +88,7 @@ namespace next
     auto iter = properties_.find( property_name );
     if( iter != properties_.end() )
     {
-      backend = iter->second->get_backend< Property >( );
+      backend = iter->second->template get_backend< Property >( );
         
     }
     return backend;
@@ -94,14 +96,14 @@ namespace next
 
   template< typename ConcreteManager >
   template< typename Property >
-  void properties_manager< ConcreteManager >::listen( const std::function < void ( const typename Property::value_type& ) >& f )
+  void properties_manager_impl< ConcreteManager >::listen( const std::function < void ( const typename Property::value_type& ) >& f )
   {
     const std::string& property_name = next::get_typename< Property >( );
     std::unique_lock< std::mutex > lock( properties_mutex_ );
     auto iter = properties_.find( property_name );
     if( iter != properties_.end() )
     {
-      return iter->second->listen< typename Property::value_type >( f );
+      return iter->second->template listen< typename Property::value_type >( f );
     }
     // should throw...
   }

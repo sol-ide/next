@@ -4,14 +4,14 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include <next/event/dispatcher.hpp>
 #include <boost/phoenix/core/argument.hpp>
 #include <boost/phoenix/object/delete.hpp>
 
 
 namespace next
 {
-  dispatcher::~dispatcher()
+  template< typename EventHandler >
+  dispatcher< EventHandler >::~dispatcher()
   {
     // TODO: wait until each event has been received
     {
@@ -28,17 +28,19 @@ namespace next
     // std::for_each( std::begin( running_threads_ ), std::end( running_threads_ ), [ ]( message_handling_thread_ptr ptr ){ delete ptr; } );
   }
 
-  std::weak_ptr< thread_group > dispatcher::create_thread_group()
+  template< typename EventHandler >
+  std::weak_ptr< thread_group< EventHandler > > dispatcher< EventHandler >::create_thread_group()
   {
     using namespace std::placeholders;
 
-    auto thread_group_ptr = std::make_shared< thread_group >( );
+    auto thread_group_ptr = std::make_shared< thread_group< EventHandler > >( );
     std::unique_lock< std::mutex > lock( thread_group_mutex_ );
     thread_groups_.insert( thread_group_ptr );
     return thread_group_ptr;
   }
 
-  void dispatcher::send_event_impl( boost::optional< event_handler& > from, event_handler& to, std::unique_ptr< next::abstract_event_data > event_data )
+  template< typename EventHandler >
+  void dispatcher< EventHandler >::send_event_impl( boost::optional< EventHandler& > from, EventHandler& to, std::unique_ptr< next::abstract_event_data< EventHandler > > event_data )
   {
     auto&& group_weak = to.get_thread_group();
     {
@@ -89,7 +91,8 @@ namespace next
     }
   }
 
-  void dispatcher::register_in_waiting_task_poll( message_handling_thread* handler )
+  template< typename EventHandler >
+  void dispatcher< EventHandler >::register_in_waiting_task_poll( message_handling_thread< EventHandler >* handler )
   {
     std::unique_lock< std::mutex > read_lock( threads_mutex_ );
     auto iter = running_threads_.find( handler );
@@ -106,7 +109,8 @@ namespace next
     }
   }
 
-  void dispatcher::remove_from_waiting_task_poll( message_handling_thread* handler )
+  template< typename EventHandler >
+  void dispatcher< EventHandler >::remove_from_waiting_task_poll( message_handling_thread< EventHandler >* handler )
   {
     std::unique_lock< std::mutex > lock( threads_mutex_ );
     auto iter = waiting_threads_.find( handler );
@@ -117,14 +121,16 @@ namespace next
     }
   }
 
-  void dispatcher::move_waiting_to_dispatching_group_thread( thread_group* group )
+  template< typename EventHandler >
+  void dispatcher< EventHandler >::move_waiting_to_dispatching_group_thread( thread_group< EventHandler >* group )
   {
     std::unique_lock< std::mutex > lock( thread_group_mutex_ );
     waiting_for_dispatch_thread_groups_.erase( group );
     currently_dispatching_thread_groups_.insert( group );
   }
-
-  void dispatcher::remove_group_thread_from_currently_dispatching( thread_group* group )
+  
+  template< typename EventHandler >
+  void dispatcher< EventHandler >::remove_group_thread_from_currently_dispatching( thread_group< EventHandler >* group )
   {
     std::unique_lock< std::mutex > lock( thread_group_mutex_ );
     if( group->has_pending_messages() == false )
@@ -139,10 +145,11 @@ namespace next
     }
   }
 
-  std::shared_ptr< thread_group > dispatcher::check_for_waiting_group()
+  template< typename EventHandler >
+  std::shared_ptr< thread_group< EventHandler > > dispatcher< EventHandler >::check_for_waiting_group()
   {
     std::unique_lock< std::mutex > lock( thread_group_mutex_ );
-    auto found_group = std::shared_ptr< thread_group >( );
+    auto found_group = std::shared_ptr< thread_group< EventHandler > >( );
     if( waiting_for_thread_thread_groups_.begin() != waiting_for_thread_thread_groups_.end() )
     {
       auto iter = waiting_for_thread_thread_groups_.begin();
@@ -153,7 +160,8 @@ namespace next
     return found_group;
   }
 
-  void dispatcher::wait_until_there_is_no_waiting_group()
+  template< typename EventHandler >
+  void dispatcher< EventHandler >::wait_until_there_is_no_waiting_group()
   {
     std::unique_lock< std::mutex > lock( thread_group_mutex_ );
     while( waiting_for_thread_thread_groups_.empty() == false && waiting_for_dispatch_thread_groups_.empty() == false && currently_dispatching_thread_groups_.empty() == false )

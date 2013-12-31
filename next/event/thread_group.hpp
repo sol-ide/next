@@ -20,12 +20,13 @@ namespace next
 {
   namespace details
   {
+    template< typename EventHandler >
     struct thread_group_event_data
     {
-      typedef std::unique_ptr< next::abstract_event_data > event_data_type;
+      typedef std::unique_ptr< next::abstract_event_data< EventHandler > > event_data_type;
 
-      boost::optional< event_handler > from;
-      boost::optional< event_handler > to;
+      boost::optional< EventHandler > from;
+      boost::optional< EventHandler > to;
       event_data_type                  event_data;
 
       thread_group_event_data()
@@ -33,7 +34,7 @@ namespace next
       {
       }
 
-      thread_group_event_data( boost::optional< event_handler& > from_hanlder, event_handler& to_handler, event_data_type&& data )
+      thread_group_event_data( boost::optional< EventHandler& > from_hanlder, EventHandler& to_handler, event_data_type&& data )
         : from( from_hanlder )
         , to( to_handler)
         , event_data( std::move( data ) )
@@ -52,7 +53,8 @@ namespace next
     };
   }
 
-  class NEXT_EVENT_EXPORT thread_group
+  template< typename EventHandler >
+  class thread_group
   {
   public:
 
@@ -60,13 +62,13 @@ namespace next
     {
     }
 
-    void store_event_data( boost::optional< event_handler& > from, event_handler& to, std::unique_ptr< next::abstract_event_data > event_data )
+    void store_event_data( boost::optional< EventHandler& > from, EventHandler& to, std::unique_ptr< next::abstract_event_data< EventHandler > > event_data )
     {
       std::unique_lock< std::mutex > lock( event_data_mutex_ );
       event_data_list_.emplace_back( from, to, std::move( event_data ) );
     }
 
-    bool get_first_free_message( details::thread_group_event_data& free_message )
+    bool get_first_free_message( details::thread_group_event_data< EventHandler >& free_message )
     {
       std::unique_lock< std::mutex > lock( event_data_mutex_ );
       if( event_data_list_.empty() == false )
@@ -86,7 +88,7 @@ namespace next
 
   private:
         
-    typedef std::deque < details::thread_group_event_data > event_data_list_type;
+    typedef std::deque < details::thread_group_event_data< EventHandler > > event_data_list_type;
     event_data_list_type event_data_list_;
     mutable std::mutex   event_data_mutex_;
   };

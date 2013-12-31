@@ -8,10 +8,6 @@
 
 namespace next
 {
-  /* virtual */ abstract_property::~abstract_property()
-  {
-  }
-
   template< typename T >
   void abstract_property::set( const T& value )
   {

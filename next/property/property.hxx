@@ -14,8 +14,8 @@ namespace next
 {
   template< typename T >
   property< T >::property( const T& value )
-    : backend_( *this )
-    , value_( value )
+    : value_( value )
+    , backend_( *this )
   {
   }
 
@@ -58,7 +58,7 @@ namespace next
     std::for_each(
       notify_change_to_frontend_.begin(),
       notify_change_to_frontend_.end(),
-      [&]( notify_list_type::value_type& f )
+      [&]( typename notify_list_type::value_type& f )
       {
         f( value_ );
       }

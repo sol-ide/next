@@ -13,8 +13,7 @@
 namespace next
 {
 
-	class event_handler;
-
+  template< typename EventHandler >
 	class abstract_event_data : boost::noncopyable
 	{
 	public:
@@ -27,7 +26,7 @@ namespace next
 
 		}
 
-    virtual void dispatch_message_to( boost::optional< event_handler >& from, event_handler& to ) = 0;
+    virtual void dispatch_message_to( boost::optional< EventHandler >& from, EventHandler& to ) = 0;
 
     virtual void get_future_result( void* value ) = 0;
   };

@@ -9,17 +9,17 @@
 #include <next/property/property.hpp>
 #include <next/property/property_manager.hpp>
 #include <next/event/event_handler.hpp>
-#include <next/event/dispatcher.hpp>
+#include <next/widget/dispatcher.hpp>
 
 #include <boost/fusion/include/as_vector.hpp>
-
+#include <boost/fusion/functional/invocation/invoke.hpp>
 #include <boost/mpl/transform.hpp>
 
 namespace next
 {
   namespace widgets
   {
-    class dispatcher;
+    class widget;
 
     template< typename T >
     struct is_placeholder
@@ -33,44 +33,21 @@ namespace next
       class property
       {
       public:
-        property()
-          : to_( nullptr )
-        {
-        }
+        property();
 
         typedef typename Property::value_type value_type;
 
-        void assign( widget& /* from */, widget& to )
-        {
-          to_ = &to;
-        }
+        void assign( boost::optional< widget >& /* from */, widget& to );
 
-        property( const property& other )
-          : to_( other.to_ )
-        {
+        property( const property& other );
 
-        }
+        property( property&& other );
+        property& operator=( const property& );
 
-        property( property&& other )
-          : to_( std::move( other.to_ ) )
-        {
+        boost::optional< value_type > operator()() const;
 
-        }
-
-        boost::optional< value_type > operator()() const
-        {
-          return to_->property< Property >();
-        }
-
-        void operator()( value_type& value )
-        {
-          to_->property< Property >( value );
-        }
-
-        void operator()( value_type&& value )
-        {
-          to_->property< Property >( std::move( value ) );
-        }
+        void operator()( value_type& value );
+        void operator()( value_type&& value );
 
       private:
         widget* to_;
@@ -78,13 +55,13 @@ namespace next
     }
 
     template< typename Property >
-    struct is_placeholder< target::property < Property > >
+    struct is_placeholder< next::widgets::target::property < Property > >
     {
       typedef std::true_type type;
     };
 
     template< typename Property >
-    struct is_placeholder< const target::property < Property > >
+    struct is_placeholder< const next::widgets::target::property < Property > >
     {
       typedef std::true_type type;
     };
@@ -97,51 +74,33 @@ namespace next
       public:
         typedef typename Property::value_type value_type;
 
-        property()
-          : from_( nullptr )
-        {
-        }
+        property();
 
-        void assign( widget& from , widget& /* to */ )
-        {
-          from_ = &from;
-        }
+        void assign( boost::optional< widget >& from , widget& /* to */ );
 
-        property( const property& other )
-          : from_( other.from_ )
-        {
+        property( const property& other );
 
-        }
+        property( property&& other );
 
-        property( property&& other )
-          : from_( std::move( other.from_ ) )
-        {
+        property& operator=( const property& );
 
-        }
+        boost::optional< value_type > operator()() const;
 
-        boost::optional< value_type > operator()() const
-        {
-          return from_->property< Property >();
-        }
-
-        void operator()( value_type& value )
-        {
-          from_->property< Property >( value );
-        }
+        void operator()( value_type& value );
 
       private:
-        widget* from_;
+        boost::optional< widget >* from_;
       };
     }
 
     template< typename Property >
-    struct is_placeholder< source::property < Property > >
+    struct is_placeholder< next::widgets::source::property < Property > >
     {
       typedef std::true_type type;
     };
 
     template< typename Property >
-    struct is_placeholder< const source::property < Property > >
+    struct is_placeholder< const next::widgets::source::property < Property > >
     {
       typedef std::true_type type;
     };
@@ -179,8 +138,11 @@ namespace next
         typedef char yes[ 1 ];
         typedef char no[ 2 ];
 
-        template <typename F>
-        static yes& test( decltype( F::operator() )* );
+        template< typename U, U >
+        struct type_check;
+
+        template <typename X>
+        static yes& test( type_check< decltype( &X::operator() ), &X::operator() >* );
 
         template <typename>
         static no& test( ... );
@@ -216,6 +178,7 @@ namespace next
       struct functor_parameters_types
       {
         typedef typename functor_parameters_types_impl< Functor, functor_has_operator< Functor >::value >::type type;
+        // typedef typename functor_parameters_types_impl< Functor, true >::type type;
       };
 
       template< typename T, typename IsPlaceholder >
@@ -254,7 +217,7 @@ namespace next
       template< typename Parameters >
       struct bind_parameters
       {
-        bind_parameters( const Parameters& parameters, widget& from, widget& to )
+        bind_parameters( const Parameters& parameters, boost::optional< widget >& from, widget& to )
           : parameters_( parameters )
           , from_( from )
           , to_( to )
@@ -270,8 +233,8 @@ namespace next
 
         bind_parameters( bind_parameters&& other )
           : parameters_( std::move( other.parameters_ ) )
-          , from_( std::move( other.from_ ) )
-          , to_( std::move( other.to_ ) )
+          , from_( other.from_ )
+          , to_( other.to_ )
         {
         }
 
@@ -292,28 +255,60 @@ namespace next
           typedef State type;
         };
 
+        template< typename Sequence, typename N, typename AtIsPossible >
+        struct protected_at_implementation
+        {
+          typedef typename boost::fusion::result_of::at<
+            Sequence,
+            N
+          >::type type;
+        };
+
+        template< typename Sequence, typename N >
+        struct protected_at_implementation< Sequence, N, boost::mpl::bool_< false > >
+        {
+          typedef boost::mpl::na type;
+        };
+
+        template< typename Sequence, typename N >
+        struct protected_at
+        {
+          typedef typename protected_at_implementation<
+            Sequence,
+            N,
+            typename boost::mpl::less<
+              N,
+              typename boost::fusion::result_of::size< Sequence >::type
+            >::type
+          >::type type;
+        };
+        
         template<typename State, typename T >
         struct result
         {
-          typedef typename result_impl<
+          typedef result_impl<
             State,
             T,
             typename is_placeholder< T >::type, // If T is a placeholder
             typename std::is_convertible<       // If T can be used for the current element
-            typename std::remove_pointer< T >::type,
-              typename boost::fusion::result_of::at< Parameters, State >::type
+              typename std::remove_pointer< T >::type,
+              // typename boost::fusion::result_of::at< Parameters, State >::type
+              typename protected_at< Parameters, State >::type
             >::type
-          >::type type;
+          > impl;
+
+          typedef typename impl::type type;
+          typedef typename impl::is_a_placeholder is_a_placeholder;
         };
 
-        template< typename T >
-        T get_value( std::true_type, T& t ) const
+        template< typename State, typename T >
+        void get_value( std::true_type, T& t ) const
         {
           t.assign( from_, to_ );
         }
 
-        template< typename T >
-        T get_value( std::false_type, T& t ) const
+        template< typename State, typename T >
+        void get_value( std::false_type, T& t ) const
         {
           t = boost::fusion::at< State >( parameters_ );
         }
@@ -321,16 +316,18 @@ namespace next
         template<typename State, typename T>
         typename result< State, T >::type operator()( const State&, T& t ) const
         {
-          t = get_value( result< State >::is_a_placeholder(), t );
+          typename result< State, T >::is_a_placeholder is_placeholder;
+          get_value< State >( is_placeholder, t );
+          return typename result< State, T >::type();
         }
 
         const Parameters& parameters_;
-        widget& from_;
+        boost::optional< widget >& from_;
         widget& to_;
       };
 
       template< typename Event, typename F >
-      class bind_slot : public next::details::abstract_slot
+      class bind_slot : public next::details::abstract_slot< next::widgets::widget >
       {
       public:
 
@@ -339,20 +336,31 @@ namespace next
         {
         }
 
+        template< typename Function, typename Sequence >
+        typename boost::fusion::result_of::invoke< Function, Sequence >::type
+        invoke( Function&& f, Sequence& s )
+        {
+          return boost::fusion::detail::invoke_impl<
+            typename boost::remove_reference< Function >::type, Sequence
+          >::call( f, s );
+        }
+
 
         template< typename ParametersType, typename ReturnType >
         void select_call( ParametersType& parameters, ReturnType* result )
         {
-          *result = boost::fusion::invoke( f_, parameters );
+          // *result = boost::fusion::invoke< F, ParametersType >( f_, parameters );
+          *result = invoke( f_, parameters );
         }
 
-        template< typename typename ParametersType >
+        template< typename ParametersType >
         void select_call( ParametersType& parameters, void* result )
         {
-          boost::fusion::invoke( f_, parameters );
+          // boost::fusion::invoke< F, ParametersType >( f_, parameters );
+          invoke( f_, parameters );
         }
 
-        virtual void call( boost::optional< event_handler >& from, event_handler& to, void* untyped_parameters, void* untyped_result )
+        virtual void call( boost::optional< widget >& from, widget& to, void* untyped_parameters, void* untyped_result )
         {
           typename Event::parameter_types* parameters = static_cast< typename Event::parameter_types* >( untyped_parameters );
           typename Event::return_type* result = static_cast< typename Event::return_type* >( untyped_result );
@@ -363,9 +371,7 @@ namespace next
 
           wanted_parameters_pointers_type wanted_parameters_pointer;
 
-          widget& widget_from = static_cast< widget& >( *from );
-          widget& widget_to = static_cast< widget& >( to );
-          boost::fusion::fold( wanted_parameters_pointer, boost::mpl::int_< 0 >(), bind_parameters < Event::parameter_types >( *parameters, widget_from, widget_to ) );
+          boost::fusion::fold( wanted_parameters_pointer, boost::mpl::int_< 0 >(), bind_parameters < typename Event::parameter_types >( *parameters, from, to ) );
 
           select_call( wanted_parameters_pointer, result );
         }
@@ -379,10 +385,11 @@ namespace next
     template< typename F >
     struct property : public next::property< F >
     {
+      using typename next::property< F >::value_type;
       typedef next::event < void( value_type ) > change;
     };
 
-    class widget : public next::properties_manager< widget >, public next::event_handler
+    class widget : public next::properties_manager< widget >, public next::event_handler_base< widget >
     {
     public:
       using properties_manager< widget >::property;
@@ -390,13 +397,10 @@ namespace next
       using properties_manager< widget >::listen;
       using properties_manager< widget >::get_property_backend;
 
-      using event_handler::listen;
+      using event_handler_base< widget >::listen;
 
-      widget( next::widgets::dispatcher& d )
-        : next::event_handler{ d.get_base_dispatcher() }
-        , dispatcher_{ d }
-      {
-      }
+      widget( next::widgets::dispatcher& d );
+      virtual ~widget();
 
       template< typename Event, typename F >
       void bind( F&& f )
@@ -404,6 +408,7 @@ namespace next
         handler_->template listen< Event >( std::make_unique< details::bind_slot< Event, F > >( std::forward< F >( f ) ) );
       }
 
+      widget& operator=( const widget& other );
     private:
 
       template< typename ConcreteManager >
@@ -412,13 +417,111 @@ namespace next
       template< typename Property >
       void property_created( Property& prop )
       {
-        prop.listen< typename Property::value_type >( [ &]( const typename Property::value_type& value ){
-          dispatcher_.send_event< typename Property::change >( value ).to( *this );
+        prop.template listen< typename Property::value_type >( [&]( const typename Property::value_type& value ){
+          dispatcher_->send_event< typename Property::change >( value ).to( *this );
         });
       }
 
     private:
-      next::widgets::dispatcher& dispatcher_;
+      next::widgets::dispatcher* dispatcher_;
     };
+
+    namespace target
+    {
+      template< typename Property >
+      property< Property >::property()
+        : to_( nullptr )
+      {
+      }
+
+      template< typename Property >
+      void property< Property >::assign( boost::optional< widget >& /* from */, widget& to )
+      {
+        to_ = &to;
+      }
+
+      template< typename Property >
+      property< Property >::property( const property& other )
+        : to_( other.to_ )
+      {
+      }
+
+      template< typename Property >
+      property< Property >::property( property&& other )
+        : to_( std::move( other.to_ ) )
+      {
+      }
+      
+      template< typename Property >
+      property< Property >& property< Property >::operator=( const property& other )
+      {
+        to_ = other.to_;
+      }
+
+      template< typename Property >
+      boost::optional< typename property< Property >::value_type >
+      property< Property >::operator()() const
+      {
+        return to_->property< Property >();
+      }
+
+      template< typename Property >
+      void property< Property >::operator()( value_type& value )
+      {
+        to_->property< Property >( value );
+      }
+
+      template< typename Property >
+      void property< Property >::operator()( value_type&& value )
+      {
+        to_->property< Property >( std::move( value ) );
+      }
+    }
+
+    namespace source
+    {
+      template< typename Property >
+      property< Property >::property()
+        : from_( nullptr )
+      {
+      }
+
+      template< typename Property >
+      void property< Property >::assign( boost::optional< widget >& from , widget& /* to */ )
+      {
+        from_ = &from;
+      }
+
+      template< typename Property >
+      property< Property >::property( const property& other )
+        : from_( other.from_ )
+      {
+      }
+
+      template< typename Property >
+      property< Property >::property( property&& other )
+        : from_( std::move( other.from_ ) )
+      {
+      }
+
+      template< typename Property >
+      property< Property >& property< Property >::operator=( const property& other )
+      {
+        from_ = other.from_;
+      }
+
+      template< typename Property >
+      boost::optional< typename property< Property >::value_type >
+      property< Property >::operator()() const
+      {
+        return (*from_)->property< Property >();
+      }
+
+      template< typename Property >
+      void property< Property >::operator()( value_type& value )
+      {
+        (*from_)->property< Property >( value );
+      }
+    }
   }
 }

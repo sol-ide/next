@@ -46,7 +46,7 @@ void test_property_set_from_backend()
     BOOST_REQUIRE_EQUAL( w.has_property< mine::size >(), false );
     w.property< mine::size >( 0.0 );
     BOOST_REQUIRE_EQUAL( w.has_property< mine::size >(), true );
-    auto& backend = w.get_property_backend< mine::size >();
+    auto backend = w.get_property_backend< mine::size >();
     BOOST_REQUIRE( !!backend );
     BOOST_REQUIRE( !received_value );
     backend->set( 10.0 );

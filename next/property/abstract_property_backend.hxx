@@ -10,10 +10,6 @@
 
 namespace next
 {
-  /* virtual */ abstract_property_backend::~abstract_property_backend()
-  {
-  }
-
   template< typename Property >
   void abstract_property_backend::set( const typename Property::value_type& value )
   {

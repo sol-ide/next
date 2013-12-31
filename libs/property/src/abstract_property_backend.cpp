@@ -4,11 +4,12 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include <next/widget/widget.hpp>
-#include <next/widget/dispatcher.hpp>
-
+#include <next/property/abstract_property_backend.hpp>
+#include <functional>
 
 namespace next
 {
-  template class dispatcher< next::widgets::widget >;
+  /* virtual */ abstract_property_backend::~abstract_property_backend()
+  {
+  }
 }

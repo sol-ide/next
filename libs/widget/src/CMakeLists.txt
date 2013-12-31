@@ -3,13 +3,14 @@
 #----------------------------------------------------------------------------
 #
 
-# set (COMPILING_NEXT_PROPERTY)
+set (COMPILING_NEXT_WIDGET)
 
-# next_add_library (property
-#   property.cpp
-#
-#   SHARED_COMPILE_FLAGS "-DNEXT_EVENT_DYN_LINK=1"
-#   STATIC_COMPILE_FLAGS "-DNEXT_EVENT_STATIC_LINK=1"
-#
-#   DEPENDS next_get_typename
-# )
+next_add_library (widget
+  widget.cpp
+  dispatcher.cpp
+
+  SHARED_COMPILE_FLAGS "-DNEXT_WIDGET_DYN_LINK=1"
+  STATIC_COMPILE_FLAGS "-DNEXT_WIDGET_STATIC_LINK=1"
+
+  DEPENDS next_event next_property
+)

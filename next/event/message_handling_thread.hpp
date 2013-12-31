@@ -14,16 +14,21 @@
 
 namespace next
 {
-	class dispatcher;
+  namespace events
+  {
+    template< typename EventHandler >
+	  class message_handling_client;
+  }
 
-  class NEXT_EVENT_EXPORT message_handling_thread
+  template< typename EventHandler >
+  class message_handling_thread
   {
   public:
-    message_handling_thread( dispatcher& d );
+    message_handling_thread( events::message_handling_client< EventHandler >& client );
     ~message_handling_thread();
 
     void thread_loop( std::condition_variable& wait_thread_launch, std::mutex& thread_launch_mutex );
-    void wake_up_thread( std::shared_ptr< thread_group > group = nullptr  );
+    void wake_up_thread( std::shared_ptr< thread_group< EventHandler > > group = nullptr  );
     void wait_for_nothing_to_do();
   private:
     void ask_end_thread();
@@ -34,7 +39,7 @@ namespace next
   private:
     std::thread thread_;
 
-    dispatcher& dispatcher_;
+    events::message_handling_client< EventHandler >& client_;
 
     bool thread_as_been_asked_to_end_;
     mutable std::mutex thread_as_been_asked_to_end_mutex_;
@@ -43,6 +48,8 @@ namespace next
     std::condition_variable wait_for_message_condition_;
     mutable std::mutex wait_for_message_lock_;
 
-    std::shared_ptr< thread_group > currenlty_handled_group_;
+    std::shared_ptr< thread_group< EventHandler > > currenlty_handled_group_;
   };
 }
+
+extern template class next::message_handling_thread< next::event_handler >;

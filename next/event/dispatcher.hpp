@@ -9,6 +9,7 @@
 #include <next/event/config.hpp>
 #include <next/event/abstract_event_data.hpp>
 #include <next/event/event_data.hpp>
+#include <next/event/message_handling_client.hpp>
 #include <next/event/message_handling_thread.hpp>
 #include <next/event/thread_group.hpp>
 #include <boost/noncopyable.hpp>
@@ -32,8 +33,8 @@
 
 namespace next
 {
+  template< typename EventHandler >
   class dispatcher;
-  class event_handler;
 
     namespace details
     {
@@ -59,16 +60,16 @@ namespace next
         };
     }
 
-    template< typename Event >
+    template< typename EventHandler, typename Event >
     class send_event_from_t : boost::noncopyable
     {
     private:
-      typedef std::unique_ptr< next::abstract_event_data > abstract_event_data_ptr;
+      typedef std::unique_ptr< next::abstract_event_data< EventHandler > > abstract_event_data_ptr;
 
       send_event_from_t();
 
     public:
-      send_event_from_t( dispatcher& d, event_handler& from, abstract_event_data_ptr event_data_ptr )
+      send_event_from_t( dispatcher< EventHandler >& d, EventHandler& from, abstract_event_data_ptr event_data_ptr )
         : event_data_( std::move( event_data_ptr ) )
         , d_( d )
         , from_( from )
@@ -77,35 +78,29 @@ namespace next
 
       send_event_from_t( send_event_from_t && other )
         : event_data_( std::move( other.event_data_ ) )
-        , d_( std::move( other.d_ ) )
-        , from_( std::move( other.from_ ) )
+        , d_( other.d_ )
+        , from_( other.from_ )
       {
       }
 
-      typename Event::future_type to( event_handler& h )
-      {
-        typename Event::future_type future;
-        event_data_->get_future_result( &future );
-        d_.send_event_impl( from_, h, std::move( event_data_ ) );
-        return std::move( future );
-      }
+      typename Event::future_type to( EventHandler& h );
 
     private:
-      abstract_event_data_ptr event_data_;
-      event_handler&          from_;
-      dispatcher&             d_;
+      abstract_event_data_ptr     event_data_;
+      dispatcher< EventHandler >& d_;
+      EventHandler&               from_;
     };
 
-  template< typename Event >
+  template< typename EventHandler, typename Event >
   class send_event_t : boost::noncopyable
   {
   private:
-    typedef std::unique_ptr< next::abstract_event_data > abstract_event_data_ptr;
+    typedef std::unique_ptr< next::abstract_event_data< EventHandler > > abstract_event_data_ptr;
 
     send_event_t();
 
   public:
-    send_event_t( dispatcher& d, abstract_event_data_ptr event_data_ptr )
+    send_event_t( dispatcher< EventHandler >& d, abstract_event_data_ptr event_data_ptr )
       : event_data_( std::move( event_data_ptr ) )
       , d_( d )
     {
@@ -118,22 +113,16 @@ namespace next
     {
     }
 
-    send_event_from_t< Event > from( event_handler& h )
+    send_event_from_t< EventHandler, Event > from( EventHandler& h )
     {
-      return send_event_from_t< Event >( d_, h, std::move( event_data_ ) );
+      return send_event_from_t< EventHandler, Event >( d_, h, std::move( event_data_ ) );
     }
 
-    typename Event::future_type to( event_handler& h )
-    {
-      typename Event::future_type future;
-      event_data_->get_future_result( &future );
-      d_.send_event_impl( boost::none, h, std::move( event_data_ ) );
-      return std::move( future );
-    }
+    typename Event::future_type to( EventHandler& h );
 
   private:
     abstract_event_data_ptr event_data_;
-    dispatcher&        d_;
+    dispatcher< EventHandler >& d_;
   };
 
   struct thread_pool_size_t
@@ -142,59 +131,80 @@ namespace next
     type value;
   };
 
-  template < typename Arguments, typename Parameter, bool ParameterIsInArguments >
-  struct initialize_thread_pool_size_from_argument_impl;
-
-  template < typename Arguments, typename Parameter >
-  struct initialize_thread_pool_size_from_argument_impl< Arguments, Parameter, true >
+  namespace details
   {
-    static void initialize( const Arguments& arguments, typename Parameter::type& value )
+    template < typename Parameter, bool ParameterIsInArguments, typename... Arguments >
+    struct initialize_parameter_from_argument_impl;
+
+    template < typename Parameter, typename... Arguments >
+    struct initialize_parameter_from_argument_impl< Parameter, true, Arguments... >
     {
-      value = boost::fusion::at_key< thread_pool_size_t >( arguments ).value;
-    }
-  };
+      static void initialize( typename Parameter::type& value, Arguments&... arguments )
+      {
+        value = boost::fusion::at_key< Parameter >(
+#ifdef _MSC_VER
+          // workaround msvc 2013 preview bug
+          boost::fusion::set< Arguments... >( arguments... )
+#else
+          boost::fusion::set< Arguments... >( std::forward< Arguments >( arguments )... )
+#endif
+        ).value;
+      }
+      
+      static typename Parameter::type initialize( Arguments&... arguments )
+      {
+        return boost::fusion::at_key< Parameter >(
+#ifdef _MSC_VER
+          // workaround msvc 2013 preview bug
+          boost::fusion::set< Arguments... >( arguments... )
+#else
+          boost::fusion::set< Arguments... >( std::forward< Arguments >( arguments )... )
+#endif
+        ).value;
+      }
+    };
 
-  template < typename Arguments, typename Parameter >
-  struct initialize_thread_pool_size_from_argument_impl< Arguments, Parameter, false >
-  {
-    static void initialize( const Arguments& arguments, typename Parameter::type& /* value */ )
+    template < typename Parameter, typename... Arguments >
+    struct initialize_parameter_from_argument_impl< Parameter, false, Arguments... >
     {
-    }
-  };
+      static void initialize( typename Parameter::type& /* value */, Arguments&... /* arguments */ )
+      {
+      }
+    };
 
-  template < typename Arguments, typename Parameter >
-  struct initialize_thread_pool_size_from_argument : initialize_thread_pool_size_from_argument_impl < Arguments, Parameter, boost::fusion::result_of::has_key< Arguments, Parameter >::value >
-  {
+    template< typename Parameter, typename... Arguments >
+    struct initialize_parameter_from_argument
+      : initialize_parameter_from_argument_impl<
+          Parameter,
+          boost::fusion::result_of::has_key<
+            boost::fusion::set< Arguments... >,
+            Parameter
+          >::value,
+          Arguments...
+      >
+    {
+    };
+  }
 
-  };
-
-  class NEXT_EVENT_EXPORT dispatcher : boost::noncopyable
+  template< typename EventHandler >
+  class dispatcher : boost::noncopyable, public next::events::message_handling_client< EventHandler >
   {
   public:
-        ~dispatcher();
+    virtual ~dispatcher();
 
     template< typename... Args >
     dispatcher( Args&&... args )
       : is_being_deleted_( false )
     {
-      typedef boost::fusion::set< Args... > Arguments;
-
-#ifdef _MSC_VER
-      // workaround msvc 2013 preview bug
-      Arguments arguments( args... );
-#else
-      Arguments arguments( std::forward< Args >( args )... );
-#endif
-
       std::size_t pool_size = 1;
-      initialize_thread_pool_size_from_argument< Arguments, thread_pool_size_t >::initialize( arguments, pool_size );
+      details::initialize_parameter_from_argument< thread_pool_size_t, Args... >::initialize( pool_size, args... );
 
       for( std::size_t index = 0; index < pool_size; ++index )
       {
-        message_handling_thread* thread_ptr = nullptr;
+        message_handling_thread< EventHandler >* thread_ptr = nullptr;
         {
           std::unique_lock< std::mutex > lock( threads_mutex_ );
-          auto result = running_threads_.emplace( new message_handling_thread( *this ) );
+          auto result = running_threads_.emplace( new message_handling_thread< EventHandler >( *this ) );
           thread_ptr = *result.first;
         }
         thread_ptr->wait_for_nothing_to_do();
@@ -203,41 +213,40 @@ namespace next
     }
 
     template< typename Event, typename... Args >
-    send_event_t< Event > send_event( Args && ... args )
+    send_event_t< EventHandler, Event > send_event( Args && ... args )
     {
-      return send_event_t< Event >( *this, std::make_unique< next::event_data< Event > >( std::forward< Args >( args )... ) );
+      return send_event_t< EventHandler, Event >( *this, std::make_unique< next::event_data< EventHandler, Event > >( std::forward< Args >( args )... ) );
     }
 
-    std::weak_ptr< thread_group > create_thread_group();
+    std::weak_ptr< thread_group< EventHandler > > create_thread_group() override;
 
   protected:
-    void send_event_impl( boost::optional< event_handler& > from, event_handler& to, std::unique_ptr< next::abstract_event_data > event_data );
+    void send_event_impl( boost::optional< EventHandler& > from, EventHandler& to, std::unique_ptr< next::abstract_event_data< EventHandler > > event_data );
 
   private:
-    template< typename Event >
+    template< typename Handler, typename Event >
     friend class send_event_t;
 
-    template< typename Event >
+    template< typename Handler, typename Event >
     friend class send_event_from_t;
 
-
+    template< typename T >
     friend class message_handling_thread;
 
-    void register_in_waiting_task_poll( message_handling_thread* handler );
-    void remove_from_waiting_task_poll( message_handling_thread* handler );
+    void register_in_waiting_task_poll( message_handling_thread< EventHandler >* handler ) override;
+    void remove_from_waiting_task_poll( message_handling_thread< EventHandler >* handler ) override;
 
+    template< typename T >
+    friend
+    class thread_group;
 
-    friend thread_group;
-
-    void move_waiting_to_dispatching_group_thread( thread_group* group );
-    void remove_group_thread_from_currently_dispatching( thread_group* group );
-    std::shared_ptr< thread_group > check_for_waiting_group();
-    void wait_until_there_is_no_waiting_group();
+    void move_waiting_to_dispatching_group_thread( thread_group< EventHandler >* group ) override;
+    void remove_group_thread_from_currently_dispatching( thread_group< EventHandler >* group ) override;
+    std::shared_ptr< thread_group< EventHandler > > check_for_waiting_group() override;
+    void wait_until_there_is_no_waiting_group() override;
 
   private:
-    // typedef next::details::set_unique_ptr< message_handling_thread > message_handling_thread_ptr;
-    // typedef std::unique_ptr< message_handling_thread > message_handling_thread_ptr;
-    typedef message_handling_thread* message_handling_thread_ptr;
+    typedef message_handling_thread< EventHandler >* message_handling_thread_ptr;
 
     std::unordered_set< message_handling_thread_ptr > waiting_threads_;
     std::unordered_set< message_handling_thread_ptr > running_threads_;
@@ -245,13 +254,11 @@ namespace next
     // sometimes we need to read 
     mutable std::mutex                                threads_mutex_;
 
-    // typedef std::weak_ptr< thread_group > thread_group_ptr;
-    // std::unordered_set < thread_group_ptr, details::hash_weak< thread_group >, details::equal_to_weak< thread_group > >  thread_groups_;
-    typedef std::shared_ptr< thread_group > thread_group_ptr;
+    typedef std::shared_ptr< thread_group< EventHandler > > thread_group_ptr;
     std::unordered_set< thread_group_ptr >  thread_groups_;
     std::unordered_set< thread_group_ptr >  waiting_for_thread_thread_groups_;
-    std::unordered_set< thread_group* >     waiting_for_dispatch_thread_groups_;
-    std::unordered_set< thread_group* >     currently_dispatching_thread_groups_;
+    std::unordered_set< thread_group< EventHandler >* >     waiting_for_dispatch_thread_groups_;
+    std::unordered_set< thread_group< EventHandler >* >     currently_dispatching_thread_groups_;
     mutable std::mutex                      thread_group_mutex_;
     std::condition_variable                 no_more_waiting_thread_group_condition_;
 
@@ -259,8 +266,28 @@ namespace next
     bool                                    is_being_deleted_;
     mutable std::mutex                      begin_deleted_mutex_;
   };
+  
+  template< typename EventHandler, typename Event >
+  typename Event::future_type send_event_from_t< EventHandler, Event >::to( EventHandler& h )
+  {
+    typename Event::future_type future;
+    event_data_->get_future_result( &future );
+    d_.send_event_impl( from_, h, std::move( event_data_ ) );
+    return std::move( future );
+  }
+
+  template< typename EventHandler, typename Event >
+  typename Event::future_type send_event_t< EventHandler, Event >::to( EventHandler& h )
+  {
+    typename Event::future_type future;
+    event_data_->get_future_result( &future );
+    d_.send_event_impl( boost::none, h, std::move( event_data_ ) );
+    return std::move( future );
+  }
 }
 
 #ifdef _MSC_VER
 # pragma warning(pop)
 #endif
+
+#include <next/event/dispatcher.hxx>

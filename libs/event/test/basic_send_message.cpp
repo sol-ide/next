@@ -41,7 +41,7 @@ void event_basic_send_event()
   std::mutex m;
   std::ostringstream oss;
   {
-    next::dispatcher d{ next::thread_pool_size_t{ 4 } };
+    next::dispatcher< next::event_handler > d{ next::thread_pool_size_t{ 4 } };
 
     next::event_handler h{ d };
 
@@ -58,7 +58,7 @@ void event_basic_send_event()
         else
         {
           // __debugbreak();
-          BOOST_FAIL( "two event are trtreated at the same times" );
+          BOOST_FAIL( "two event are treated at the same times" );
         }
       }
     );
@@ -89,7 +89,7 @@ void event_basic_send_event()
 
 void event_basic_send_message_with_result()
 {
-  next::dispatcher d{ next::thread_pool_size_t{ 4 } };
+  next::dispatcher< next::event_handler > d{ next::thread_pool_size_t{ 4 } };
 
   next::event_handler h{ d };
   auto operation = [ ]( int x ) -> int
@@ -162,7 +162,7 @@ void multiple_handler_registered_on_event()
   );
 
   {
-    next::dispatcher d{ next::thread_pool_size_t{ 4 } };
+    next::dispatcher< next::event_handler > d{ next::thread_pool_size_t{ 4 } };
 
     next::event_handler h{ d };
     for( int handler_index = 0; handler_index < number_of_handler; ++handler_index )

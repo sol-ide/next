@@ -13,8 +13,8 @@
 namespace next
 {
 
-  template< typename Event >
-  class event_data : public abstract_event_data
+  template< typename EventHandler, typename Event >
+  class event_data : public abstract_event_data< EventHandler >
   {
   public:
     typedef typename Event::parameter_types parameters_type;
@@ -29,7 +29,7 @@ namespace next
     {
     }
 
-    virtual void dispatch_message_to( boost::optional< event_handler >& from, event_handler& to )
+    virtual void dispatch_message_to( boost::optional< EventHandler >& from, EventHandler& to )
     {
       to.call( next::get_typename< Event >(), from, to, &parameters_, &promise_ );
     }

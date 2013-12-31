@@ -164,9 +164,9 @@ set(Boost_USE_MULTI_THREADED ON)
 
 # I use the boost trunk on win32...
 if(WIN32)
-  find_package( Boost REQUIRED unit_test_framework )
+  find_package( Boost REQUIRED unit_test_framework system thread )
 else(WIN32)
-  find_package( Boost REQUIRED test_exec_monitor system )
+  find_package( Boost REQUIRED test_exec_monitor system thread )
 endif(WIN32)
 
 set(CMAKE_VERBOSE_MAKEFILE true)

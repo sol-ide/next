@@ -23,7 +23,7 @@ namespace next
 #else
 #  ifdef __GNUC__
 #    ifdef __clang__
-            const std::size_t index_of_begin_name = std::strlen( "const std::string &next::details::get_typename_impl(T *) [T = " );
+            const std::size_t index_of_begin_name = std::strlen( "const std::string &next::details::get_typename_impl(typename std::remove_reference<T>::type *) [T = " );
             const std::size_t index_of_end_name = std::strlen( function_name ) - std::strlen( "]" );
 #    else
             const std::size_t index_of_begin_name = std::strlen( "const string& next::details::get_typename_impl() [with T = " );

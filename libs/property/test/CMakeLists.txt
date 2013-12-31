@@ -10,5 +10,5 @@ include_directories(${NEXT_SOURCE_DIR})
 next_test_run(
   basic_property
   LINK_LIBS ${Boost_TEST_EXEC_MONITOR_LIBRARY}
-  DEPENDS next_get_typename
+  DEPENDS next_get_typename next_property
 )

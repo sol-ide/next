@@ -5,10 +5,10 @@
 
 include_directories(${NEXT_SOURCE_DIR})
 
-
-# next_test_run( basic_widget DEPENDS boost_unit_test_framework next_widget )
 next_test_run(
   basic_widget
   LINK_LIBS ${Boost_TEST_EXEC_MONITOR_LIBRARY}
-  DEPENDS next_event
+            ${Boost_SYSTEM_LIBRARY}
+            ${Boost_THREAD_LIBRARY}
+  DEPENDS next_widget
 )
