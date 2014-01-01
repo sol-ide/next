@@ -98,7 +98,7 @@ void test_bind_event_with_property()
 
     BOOST_REQUIRE_EQUAL( w_source.has_property< mine::size >(), true );
     BOOST_REQUIRE_EQUAL( w_target.has_property< mine::size >(), false );
-    BOOST_REQUIRE_EQUAL( w_target.property< mine::size >(), 3.1415 );
+    BOOST_REQUIRE_EQUAL( *w_source.property< mine::size >(), 3.1415 );
 
     d.send_event< mine::a_signal >().from( w_source ).to( w_target );
     b.wait();
@@ -106,8 +106,8 @@ void test_bind_event_with_property()
     BOOST_REQUIRE_EQUAL( w_source.has_property< mine::size >(), true );
     BOOST_REQUIRE_EQUAL( w_target.has_property< mine::size >(), true );
 
-    BOOST_REQUIRE_EQUAL( w_source.property< mine::size >(), 3.1415 );
-    BOOST_REQUIRE_EQUAL( w_target.property< mine::size >(), 3.1415 );
+    BOOST_REQUIRE_EQUAL( *w_source.property< mine::size >(), 3.1415 );
+    BOOST_REQUIRE_EQUAL( *w_target.property< mine::size >(), 3.1415 );
   }
 }
 
@@ -124,7 +124,7 @@ boost::unit_test_framework::test_suite *
 
   test->add( BOOST_TEST_CASE( test_property_set_from_backend ) );
   test->add( BOOST_TEST_CASE( test_send_event ) );
-  
+  test->add( BOOST_TEST_CASE( test_bind_event_with_property ) );
   
   
 

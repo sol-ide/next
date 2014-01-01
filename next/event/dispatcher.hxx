@@ -44,7 +44,7 @@ namespace next
   {
     auto&& group_weak = to.get_thread_group();
     {
-      std::unique_lock< std::mutex > lock( thread_group_mutex_ );
+      std::unique_lock< std::mutex > group_lock( thread_group_mutex_ );
       {
         auto group_shared = group_weak.lock();
         group_shared->store_event_data( from, to, std::move( event_data ) );
@@ -62,17 +62,20 @@ namespace next
           if( insert_result.second == true )
           {
             // no event is waiting or dispatching in this thread group... wake up a thread if possible.
-            std::unique_lock< std::mutex > lock( threads_mutex_ );
-            if( waiting_threads_.begin() != waiting_threads_.end() )
+            std::unique_lock< std::mutex > thread_lock( threads_mutex_ );
+            if( waiting_threads_.empty() == false )
             {
               std::unique_lock< std::mutex > being_deleted_lock( begin_deleted_mutex_ );
               if( is_being_deleted_ == false )
               {
+                group_lock.unlock();
                 being_deleted_lock.unlock();
 
                 auto iter_waiting_thread = waiting_threads_.begin();
                 auto iter_running_thread = running_threads_.insert( std::move( *iter_waiting_thread ) );
                 waiting_threads_.erase( iter_waiting_thread );
+
+                thread_lock.unlock();
                 auto& message_handling_thread_ptr = *iter_running_thread.first;
                 message_handling_thread_ptr->wake_up_thread( group_shared );
               }

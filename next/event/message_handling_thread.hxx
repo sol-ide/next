@@ -25,14 +25,14 @@ namespace next
       thread_ = std::thread( &message_handling_thread< EventHandler >::thread_loop, this, std::ref( wait_thread_launch ), std::ref( thread_launch_mutex ) );
       wait_thread_launch.wait( thread_launch_lock );
     }
-	}
+  }
 
   template< typename EventHandler >
-	message_handling_thread< EventHandler >::~message_handling_thread()
-	{
-		ask_end_thread();
-		thread_.join();
-	}
+  message_handling_thread< EventHandler >::~message_handling_thread()
+  {
+    ask_end_thread();
+    thread_.join();
+  }
 
   template< typename EventHandler >
 	void message_handling_thread< EventHandler >::ask_end_thread()
@@ -92,7 +92,7 @@ namespace next
       std::unique_lock< std::mutex > thread_launch_lock( thread_launch_mutex );
       wait_thread_launch.notify_one();
     }
-        
+     
     while( thread_as_not_been_asked_to_end() || currenlty_handled_group_ != nullptr )
 		{
       if( currenlty_handled_group_ != nullptr )
